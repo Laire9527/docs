@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZE170DA-01A (H032) 3bit → 6bit Mode 切換重點整理</title>
+
+<style>
+body {
+    font-family: "Microsoft JhengHei", "Segoe UI", sans-serif;
+    line-height: 1.8;
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 20px;
+    color: #333;
+    background: #fafafa;
+}
+
+h1 {
+    border-bottom: 3px solid #2c7be5;
+    padding-bottom: 10px;
+    color: #1f4e79;
+}
+
+h2 {
+    margin-top: 40px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #ddd;
+    color: #1f4e79;
+}
+
+h3 {
+    color: #444;
+}
+
+pre {
+    background: #272822;
+    color: #f8f8f2;
+    padding: 15px;
+    overflow-x: auto;
+    border-radius: 8px;
+}
+
+code {
+    font-family: Consolas, monospace;
+}
+
+.section {
+    background: white;
+    padding: 25px;
+    margin-top: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.note {
+    background: #fff8e1;
+    border-left: 5px solid #ffc107;
+    padding: 12px;
+    margin: 15px 0;
+}
+
+.important {
+    background: #e8f5e9;
+    border-left: 5px solid #43a047;
+    padding: 12px;
+    margin: 15px 0;
+}
+
+ul li {
+    margin-bottom: 6px;
+}
+
+hr {
+    margin: 35px 0;
+}
+/* ===== 浮動目錄 ===== */
+html {
+    scroll-behavior: smooth;
+}
+
+h1, h2 {
+    scroll-margin-top: 20px;
+}
+
+.toc {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 220px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    border-top: 4px solid #2c7be5;
+    font-size: 14px;
+    line-height: 1.5;
+    z-index: 1000;
+}
+
+.toc summary {
+    padding: 10px 14px;
+    font-weight: bold;
+    color: #1f4e79;
+    cursor: pointer;
+    user-select: none;
+}
+
+.toc ul {
+    list-style: none;
+    margin: 0;
+    padding: 0 8px 6px;
+}
+
+.toc li {
+    margin: 0;
+}
+
+.toc a {
+    display: block;
+    padding: 6px 8px;
+    color: #333;
+    text-decoration: none;
+    border-radius: 6px;
+}
+
+.toc a:hover {
+    background: #e8f0fc;
+    color: #2c7be5;
+}
+
+.toc .to-top {
+    display: block;
+    margin: 4px 14px 14px;
+    padding: 7px 0;
+    text-align: center;
+    background: #2c7be5;
+    color: white;
+    border-radius: 6px;
+    text-decoration: none;
+}
+
+.toc .to-top:hover {
+    background: #1f4e79;
+}
+
+@media print {
+    .toc {
+        display: none;
+    }
+}
+</style>
+
+</head>
+
+<body>
+
+<nav class="toc">
+<details open>
+<summary>目錄</summary>
+<ul>
+<li><a href="#sec1">1. 推測的硬體架構</a></li>
+<li><a href="#sec2">2. Power On 時序整理</a></li>
+<li><a href="#sec3">3. 6bit Mode 設定方式</a></li>
+<li><a href="#sec4">4. 實際開機流程範例</a></li>
+</ul>
+<a class="to-top" href="#top">▲ 回到最上方</a>
+</details>
+</nav>
+
+<h1 id="top">ZE170DA-01A (H032) 3bit → 6bit Mode 切換重點整理</h1>
+
+<div class="section">
+<h2 id="sec1">1. 推測的硬體架構</h2>
+
+<p>依據目前 FPGA 專案運作方式推測：</p>
+
+<pre>
+    Main Application
+            │
+            │ 更新影像資料
+            ▼
+       Frame Buffer
+          (DDR)
+            │
+            │ 持續讀取
+            ▼
+      Video Generator
+            │
+            ▼
+         MIPI DSI TX
+            │
+            ▼
+            LCD
+</pre>
+
+<h3>運作概念</h3>
+
+<ul>
+<li>Main App 負責更新 Frame Buffer 內容</li>
+<li>MIPI TX 持續從 Frame Buffer 讀取資料</li>
+<li>MIPI Video Stream 持續輸出</li>
+<li>LCD 持續接收 Video Packet</li>
+<li>畫面更新時，不需要重新初始化 LCD</li>
+<li>只需修改 Frame Buffer 內容即可</li>
+</ul>
+
+<p>因此：</p>
+
+<pre>
+Panel Register 設定
+≠
+Video Pixel Data
+</pre>
+
+<p>兩者是獨立的。</p>
+
+<h3>Panel Register</h3>
+
+<ul>
+<li>Color Mode</li>
+<li>Gamma</li>
+<li>TE</li>
+<li>Power Setting</li>
+<li>Driver IC 參數</li>
+</ul>
+
+<p>通常只在開機或 Reset 後設定一次。</p>
+
+<h3>Video Stream</h3>
+
+<ul>
+<li>RGB Pixel Data</li>
+<li>持續輸出</li>
+<li>即使畫面不變也會持續送出</li>
+</ul>
+
+<p>因此：</p>
+
+<pre>
+修改圖片
+=
+修改影像記憶體
+</pre>
+
+<p>不需要重送 Initial Code。</p>
+
+</div>
+
+<div class="section">
+<h2 id="sec2">2. Power On 時序整理</h2>
+
+<p>面板電源：</p>
+
+<pre>
+VDDIO = 1.8V
+AVDD  = +6.2V
+AVEE  = -6.2V
+</pre>
+
+<h3>Step 1 - Power On</h3>
+
+<pre>
+VDDIO
+AVDD
+AVEE
+</pre>
+
+<h3>Step 2 - 等待電源穩定</h3>
+
+<pre>
+T2 = 200 ms
+</pre>
+
+<h3>Step 3 - RESETB 維持 Low</h3>
+
+<pre>
+T4 = 10 ms
+</pre>
+
+<p>可理解為：</p>
+
+<pre>
+Hardware Reset Pulse
+</pre>
+
+<h3>Step 4 - RESETB 拉 High</h3>
+
+<p>釋放 Reset</p>
+
+<h3>Step 5 - 等待 Driver IC 初始化</h3>
+
+<pre>
+T5 = 20 ms
+</pre>
+
+<h3>Step 6 - 送出 Initial Code</h3>
+
+<p>包含：</p>
+
+<pre>
+Enable
+6bit 設定
+Gamma Table
+TE
+</pre>
+
+<p>等所有初始化命令。</p>
+
+<h3>Step 7 - Sleep Out</h3>
+
+<pre>
+Command = 0x11
+Wait = 100 ms
+</pre>
+
+<h3>Step 8 - Display ON</h3>
+
+<pre>
+Command = 0x29
+Wait = 50 ms
+</pre>
+
+<h3>Step 9 - Video Streaming</h3>
+
+<pre>
+Frame #1
+Frame #2
+Frame #3
+...
+</pre>
+
+<p>直到系統關機。</p>
+
+</div>
+
+<div class="section">
+<h2 id="sec3">3. 6bit Mode 設定方式</h2>
+
+<p>在 Initial Code 中加入：</p>
+
+<pre>
+FF 05
+</pre>
+
+<p>然後：</p>
+
+<pre>
+D2
+12 0C
+5D 5D
+00 00
+08 57
+04 00 00
+</pre>
+
+<p>若以程式表示：</p>
+
+<pre><code>write_reg(0xFF, 0x05);
+
+write_reg(
+    0xD2,
+    0x12, 0x0C,
+    0x5D, 0x5D,
+    0x00, 0x00,
+    0x08, 0x57,
+    0x04, 0x00, 0x00
+);
+</code></pre>
+
+<p>此設定為：</p>
+
+<pre>
+RGB666
+R = 6bit
+G = 6bit
+B = 6bit
+</pre>
+
+<p>即：</p>
+
+<pre>
+6 / 6 / 6 Color Mode
+</pre>
+
+<div class="important">
+<b>重要結論</b>
+</div>
+
+<p>此設定屬於：</p>
+
+<pre>
+Panel Initialization Parameter
+</pre>
+
+<p>而不是：</p>
+
+<pre>
+Image Data
+</pre>
+
+<p>因此：</p>
+
+<pre>
+換圖片
+不需重送
+</pre>
+
+<p>但：</p>
+
+<pre>
+LCD Reset
+FPGA 重啟
+系統斷電
+</pre>
+
+<p>之後建議重新執行完整 Initial Code。</p>
+
+<p>可將此設定視為：</p>
+
+<pre>
+Panel 開機必要設定
+</pre>
+
+<p>而非一次性的永久設定。</p>
+
+</div>
+
+<div class="section">
+<h2 id="sec4">4. 實際開機流程範例</h2>
+
+<pre><code>power_on();
+
+delay_ms(200);       // T2
+
+reset_low();
+delay_ms(10);        // T4
+
+reset_high();
+delay_ms(20);        // T5
+
+send_init_table();   // 包含 FF05 + D2 6bit設定
+
+send_cmd(0x11);      // Sleep Out
+delay_ms(100);
+
+send_cmd(0x29);      // Display ON
+delay_ms(50);
+
+start_video_stream();
+</code></pre>
+
+<p>之後：</p>
+
+<pre>
+Main App
+    ↓
+更新 Frame Buffer
+    ↓
+MIPI 自動送出新畫面
+</pre>
+
+<div class="note">
+不需要再次執行 Initial Code。
+</div>
+
+</div>
+
+</body>
+</html>
