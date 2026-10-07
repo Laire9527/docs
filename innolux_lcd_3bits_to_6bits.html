@@ -143,6 +143,19 @@ h1, h2 {
     background: #1f4e79;
 }
 
+.toc .back {
+    margin: -6px 14px 14px;
+    padding: 6px 0;
+    text-align: center;
+    border: 1px solid #2c7be5;
+    color: #2c7be5;
+}
+
+.toc .back:hover {
+    background: #e8f0fc;
+    color: #1f4e79;
+}
+
 @media print {
     .toc {
         display: none;
@@ -164,6 +177,7 @@ h1, h2 {
 <li><a href="#sec4">4. 實際開機流程範例</a></li>
 </ul>
 <a class="to-top" href="#top">▲ 回到最上方</a>
+<a class="back" href="index.html">← 回上一頁</a>
 </details>
 </nav>
 
@@ -207,9 +221,7 @@ h1, h2 {
 <p>因此：</p>
 
 <pre>
-Panel Register 設定
-≠
-Video Pixel Data
+Panel Register 設定 ≠ Video Pixel Data
 </pre>
 
 <p>兩者是獨立的。</p>
@@ -237,9 +249,7 @@ Video Pixel Data
 <p>因此：</p>
 
 <pre>
-修改圖片
-=
-修改影像記憶體
+修改圖片 = 修改影像記憶體
 </pre>
 
 <p>不需要重送 Initial Code。</p>
