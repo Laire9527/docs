@@ -52,6 +52,7 @@
     border-color: var(--accent);
     outline: none;
   }
+  .comment { display: none !important; }
   .title { display: block; font-weight: 600; color: var(--accent); }
   .desc { display: block; margin-top: 4px; font-size: 0.92rem; color: var(--muted); }
   footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); }
@@ -60,7 +61,7 @@
 <body>
 <main>
   <h1>文件目錄</h1>
-  <p class="lead">團隊 review 用的整理文件。</p>
+  <p class="lead comment">團隊 review 用的整理文件。</p>
 
   <h2>FPGA / 光引擎板</h2>
   <ul>
@@ -72,7 +73,7 @@
     </li>
     <li>
       <a class="doc" href="powerboard_handover_toCYP.html">
-        <span class="title">XCZU1CG 供電載板 — 設計交接文件</span>
+        <span class="title">XCZU1CG 供電載板 — 設計交接文件（奔馳科技提供）</span>
         <span class="desc">交付西柏科技的 12–24 V 供電／載板設計：交接範圍、電源架構與時序、J1 Pad Map、接頭與 EMC、參考電路圖。</span>
       </a>
     </li>
@@ -88,7 +89,7 @@
     </li>
   </ul>
 
-  <footer>新增文件時，在上方對應分類加一個 &lt;li&gt; 即可。</footer>
+  <footer class="comment">新增文件時，在上方對應分類加一個 &lt;li&gt; 即可。</footer>
 </main>
 </body>
 </html>

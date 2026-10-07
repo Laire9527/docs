@@ -38,6 +38,7 @@ nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self
 nav.toc ol{list-style:none;margin:0;padding:0;display:grid;gap:4px}
 nav.toc a{color:var(--muted);text-decoration:none;display:block;padding:2px 0 2px 10px;border-left:2px solid var(--line)}
 nav.toc a:hover,nav.toc a:focus-visible{color:var(--accent);border-left-color:var(--accent);outline:none}
+nav.toc .toc-foot{margin-top:16px;padding-top:12px;border-top:1px solid var(--line);display:grid;gap:4px}
 main{min-width:0;max-width:880px}
 
 header.doc{padding-block:40px 28px;border-bottom:1px solid var(--line);display:grid;gap:14px}
@@ -142,10 +143,14 @@ a{color:var(--accent)}
     <li><a href="#check">7 交接檢查清單</a></li>
     <li><a href="#src">附錄 資料來源</a></li>
   </ol>
+  <div class="toc-foot">
+    <a href="#top">▲ 回到最上方</a>
+    <a href="index.html">← 回上一頁</a>
+  </div>
 </nav>
 
 <main>
-<header class="doc">
+<header class="doc" id="top">
   <div class="eyebrow">Phrozen 內部 · FPGA 板專案收尾整理</div>
   <h1>USB2MIPI 光引擎板交接整理</h1>
   <p class="lede">彙整奔馳科技（Racer Tech）提供的開發成果與交接文件，作為我們把設計轉給下一家廠商打樣與生產時的依據。重點放在「要交什麼、哪些已定案、哪些還沒定、哪些文件彼此矛盾」。</p>

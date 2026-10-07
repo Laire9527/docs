@@ -30,6 +30,9 @@ nav{position:sticky;top:0;z-index:50;background:rgba(251,251,250,.97);
 nav a{font-family:var(--m);font-size:11px;color:var(--ink2);text-decoration:none;
   padding:4px 9px;border:1px solid transparent;white-space:nowrap}
 nav a:hover{color:var(--blue);border-color:var(--hair2);background:var(--panel)}
+.nav-act{padding-bottom:0;gap:8px}
+nav a.act{color:var(--blue);font-weight:600;border-color:var(--hair2)}
+nav a.act:hover{border-color:var(--blue)}
 .nav-t{font-family:var(--m);font-size:11px;font-weight:600;color:var(--blue);letter-spacing:.1em;margin-right:6px}
 
 header{padding-block:42px 0}
@@ -45,7 +48,7 @@ h1{font-family:var(--d);font-weight:800;font-size:clamp(27px,4.4vw,40px);line-he
 .dm-v{font-size:15px;font-weight:700;margin-top:5px}
 .dm-s{font-size:13px;color:var(--ink2);margin-top:2px}
 
-section{padding-block:44px 6px;scroll-margin-top:56px}
+section{padding-block:44px 6px;scroll-margin-top:96px}
 h2{font-family:var(--d);font-weight:800;font-size:24px;margin:0 0 6px;letter-spacing:-.01em}
 h2 .num{color:var(--blue);font-family:var(--m);font-size:17px;font-weight:600;margin-right:12px}
 .h2n{color:var(--ink3);font-size:13.5px;margin:0 0 22px;max-width:80ch}
@@ -143,7 +146,9 @@ footer{margin-top:50px;padding-block:24px 50px;border-top:2px solid var(--ink);
 </head>
 <body>
 
-<nav><div class="nav-in">
+<nav><div class="nav-in nav-act">
+  <a class="act" href="#top">▲ 回到最上方</a><a class="act" href="index.html">← 回上一頁</a>
+</div><div class="nav-in">
   <span class="nav-t">目次</span>
   <a href="#s0">0 摘要</a><a href="#s1">1 範圍</a><a href="#s2">2 設計變更</a>
   <a href="#s3">3 電源架構</a><a href="#s4">4 輸入保護</a><a href="#s5">5 時序</a>
@@ -153,7 +158,7 @@ footer{margin-top:50px;padding-block:24px 50px;border-top:2px solid var(--ink);
 
 <div class="shell">
 
-<header>
+<header id="top">
   <div class="doctype">DESIGN HANDOVER　設計交接文件</div>
   <h1>XCZU1CG FPGA 供電／載板<br>設計交接文件</h1>
   <p class="sub">光固化 3D 列印光引擎 · 寬輸入 12–24 V 供電與載板 · 交付西柏科技接手實作</p>
