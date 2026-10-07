@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>USB2MIPI 光引擎板交接整理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: single reading column (~880px) with a sticky section index on wide screens; tables scroll in their own boxes */
+:root{
+  --bg:#f5f7f6; --surface:#ffffff; --fg:#17201d; --muted:#5b6964; --line:#d6dedb;
+  --accent:#0f6b55;      /* solder-mask green */
+  --accent-soft:#e1efe9;
+  --warn:#9a5a00; --warn-soft:#fbefd9;
+  --crit:#a8322a; --crit-soft:#f8e3e0;
+  --ok:#2c6e3f; --ok-soft:#e2f1e6;
+  --code-bg:#eef2f0;
+  --font-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111715; --surface:#18201d; --fg:#e3ebe8; --muted:#97a6a1; --line:#2c3833;
+  --accent:#5cc7a6; --accent-soft:#1b3129;
+  --warn:#e8b25a; --warn-soft:#33281a; --crit:#f0877c; --crit-soft:#3a1f1c; --ok:#7fcf95; --ok-soft:#1b2f22;
+  --code-bg:#1f2a26; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111715; --surface:#18201d; --fg:#e3ebe8; --muted:#97a6a1; --line:#2c3833;
+  --accent:#5cc7a6; --accent-soft:#1b3129;
+  --warn:#e8b25a; --warn-soft:#33281a; --crit:#f0877c; --crit-soft:#3a1f1c; --ok:#7fcf95; --ok-soft:#1b2f22;
+  --code-bg:#1f2a26; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.75;padding-inline:16px;padding-block:0 64px}
+.wrap{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:200px minmax(0,1fr);gap:48px}
+@media (max-width:900px){.wrap{grid-template-columns:minmax(0,1fr)}nav.toc{display:none}}
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;padding-top:40px;font-size:13px}
+nav.toc ol{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+nav.toc a{color:var(--muted);text-decoration:none;display:block;padding:2px 0 2px 10px;border-left:2px solid var(--line)}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--accent);border-left-color:var(--accent);outline:none}
+main{min-width:0;max-width:880px}
+
+header.doc{padding-block:40px 28px;border-bottom:1px solid var(--line);display:grid;gap:14px}
+.eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-size:clamp(26px,4vw,36px);line-height:1.25;font-weight:900;margin:0;text-wrap:balance}
+.lede{color:var(--muted);margin:0;max-width:62ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px 24px;font-size:13px;color:var(--muted)}
+.meta b{color:var(--fg);font-weight:500}
+
+section{padding-block:36px 8px;scroll-margin-top:16px}
+h2{font-size:22px;font-weight:700;margin:0 0 6px;display:flex;gap:12px;align-items:baseline;text-wrap:balance}
+h2 .no{font-family:var(--font-mono);font-size:14px;color:var(--accent);font-weight:600}
+h3{font-size:16px;font-weight:700;margin:28px 0 8px}
+p{margin:0 0 12px;max-width:68ch}
+.sub{color:var(--muted);margin-bottom:18px}
+code,.mono{font-family:var(--font-mono);font-size:.9em}
+code{background:var(--code-bg);padding:1px 5px;border-radius:4px}
+ul.plain{margin:0 0 12px;padding-left:1.2em;max-width:70ch}
+ul.plain li{margin-bottom:4px}
+
+.tbl{overflow-x:auto;margin:8px 0 16px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px;line-height:1.55}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:none}
+th{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.04em;background:var(--code-bg);white-space:nowrap}
+td.num,td .num{font-family:var(--font-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+td.k{font-family:var(--font-mono);font-weight:600;white-space:nowrap}
+
+/* key figures */
+.figs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:20px 0 8px}
+@media (max-width:640px){.figs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.fig{background:var(--surface);padding:14px 16px;display:grid;gap:2px}
+.fig .v{font-family:var(--font-mono);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.fig .l{font-size:12.5px;color:var(--muted);line-height:1.45}
+
+/* callouts */
+.note{border:1px solid var(--line);border-left-width:4px;border-radius:6px;padding:12px 16px;margin:12px 0 16px;background:var(--surface)}
+.note.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.note.crit{border-left-color:var(--crit);background:var(--crit-soft)}
+.note.info{border-left-color:var(--accent);background:var(--accent-soft)}
+.note b.t{display:block;margin-bottom:2px}
+.note p:last-child{margin-bottom:0}
+
+/* chips */
+.chip{display:inline-block;font-size:12px;font-weight:500;padding:1px 8px;border-radius:999px;white-space:nowrap;border:1px solid currentColor}
+.chip.crit{color:var(--crit)} .chip.warn{color:var(--warn)} .chip.ok{color:var(--ok)} .chip.info{color:var(--accent)} .chip.mute{color:var(--muted)}
+
+/* architecture diagram */
+.arch{overflow-x:auto;margin:12px 0 20px}
+.arch-inner{min-width:720px;display:grid;grid-template-columns:1fr 34px 1.2fr 34px 1.5fr 34px 1fr;align-items:stretch}
+.blk{border:1.5px solid var(--line);border-radius:6px;background:var(--surface);padding:12px;display:grid;align-content:start;gap:4px;font-size:13px;line-height:1.5}
+.blk .h{font-weight:700;font-size:14px}
+.blk .s{color:var(--muted);font-size:12px}
+.blk.core{border-color:var(--accent)}
+.blk.new{border-style:dashed;border-color:var(--warn)}
+.split{display:grid;gap:6px;margin-top:4px}
+.split div{border:1px solid var(--line);border-radius:4px;padding:6px 8px;background:var(--bg)}
+.arrow{display:grid;place-items:center;color:var(--muted);font-family:var(--font-mono);font-size:11px;text-align:center;line-height:1.2}
+.arrow::before{content:"→";font-size:18px;color:var(--accent)}
+.power{min-width:720px;margin-top:10px;display:grid;grid-template-columns:1fr 34px 1.2fr 34px 1.5fr 34px 1fr;font-size:12px;color:var(--muted)}
+.power .bar{grid-column:1 / 6;border:1px dashed var(--warn);border-radius:6px;padding:6px 10px;color:var(--fg)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--muted);margin-top:8px}
+.legend span::before{content:"";display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px;border:1.5px solid var(--line)}
+.legend .lc::before{border-color:var(--accent)} .legend .ln::before{border-color:var(--warn);border-style:dashed}
+
+/* timeline */
+.tl{display:grid;gap:0;margin:8px 0 16px;border-left:2px solid var(--line);padding-left:18px}
+.tl div{position:relative;padding:4px 0 10px;font-size:14px}
+.tl div::before{content:"";position:absolute;left:-24px;top:12px;width:10px;height:10px;border-radius:50%;background:var(--surface);border:2px solid var(--line)}
+.tl div.now::before{background:var(--accent);border-color:var(--accent)}
+.tl div.dead{color:var(--muted)}
+.tl .d{font-family:var(--font-mono);font-size:12.5px;color:var(--muted);margin-right:8px}
+
+.seq{font-family:var(--font-mono);font-size:13px;background:var(--code-bg);border-radius:6px;padding:10px 14px;margin:8px 0 14px;overflow-x:auto;white-space:pre;line-height:1.7}
+
+ol.risk{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:12px;counter-reset:r}
+ol.risk>li{counter-increment:r;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px 12px;display:grid;gap:6px}
+ol.risk>li .top{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+ol.risk>li .top::before{content:"R" counter(r);font-family:var(--font-mono);font-weight:600;color:var(--muted);font-size:13px}
+ol.risk>li .top b{font-size:15px}
+ol.risk>li p{margin:0;font-size:14px}
+ol.risk>li .act{font-size:14px;color:var(--fg)}
+ol.risk>li .act::before{content:"建議動作　";color:var(--accent);font-weight:700}
+
+footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+a{color:var(--accent)}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<nav class="toc" aria-label="目錄">
+  <ol>
+    <li><a href="#summary">摘要</a></li>
+    <li><a href="#arch">1 系統架構</a></li>
+    <li><a href="#sw">2 軟體與通訊協定</a></li>
+    <li><a href="#fw">3 韌體燒錄與環境</a></li>
+    <li><a href="#pwr">4 供電載板規格</a></li>
+    <li><a href="#change">5 設計變更與更正</a></li>
+    <li><a href="#risk">6 生產前風險與待辦</a></li>
+    <li><a href="#check">7 交接檢查清單</a></li>
+    <li><a href="#src">附錄 資料來源</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="doc">
+  <div class="eyebrow">Phrozen 內部 · FPGA 板專案收尾整理</div>
+  <h1>USB2MIPI 光引擎板交接整理</h1>
+  <p class="lede">彙整奔馳科技（Racer Tech）提供的開發成果與交接文件，作為我們把設計轉給下一家廠商打樣與生產時的依據。重點放在「要交什麼、哪些已定案、哪些還沒定、哪些文件彼此矛盾」。</p>
+  <div class="meta">
+    <span>整理日期 <b>2026-10-06</b></span>
+    <span>研發廠商 <b>奔馳科技 Racer Tech</b></span>
+    <span>交接文件指定接手方 <b>西柏科技 Cypress</b></span>
+    <span>終端客戶 <b>Stratasys</b></span>
+  </div>
+</header>
+
+<section id="summary">
+  <h2>摘要</h2>
+  <p>這個專案是光固化 3D 印表機的「光引擎」：上位機用 Python 把切層影像經 USB 2.0 送進 FPGA，FPGA 再經 MIPI 推到 mask LCD 曝光。硬體上分成兩塊板：</p>
+  <ul class="plain">
+    <li><b>XCZU1CG 核心板</b>（Xilinx Zynq UltraScale+）：跑 Racer 開發的 Vivado 硬體設計與 Vitis 韌體。核心板本身沒有電源管理晶片（PMIC）。</li>
+    <li><b>供電載板</b>：把 12–24 V 轉成核心板要的 6 條邏輯電源與 3 條面板偏壓，經 30-pad 的 J1 邊緣送進核心板；同時把 USB、UART、debug 拉到 header。<b>這塊是接下來要請新廠商畫原理圖、Layout、打樣的板子。</b></li>
+  </ul>
+  <div class="figs">
+    <div class="fig"><span class="v">12–24 V</span><span class="l">寬輸入、單一電源接頭（Micro-Fit 3.0）</span></div>
+    <div class="fig"><span class="v">6 + 3</span><span class="l">邏輯電源軌 + 面板偏壓軌</span></div>
+    <div class="fig"><span class="v">≈ 8.9 W</span><span class="l">穩態總功耗（核心板 + 17″ 面板）</span></div>
+    <div class="fig"><span class="v">&lt; 3.5 A</span><span class="l">開機湧浪上限（客戶線上保險絲）</span></div>
+  </div>
+  <div class="note warn">
+    <b class="t">接手前最要注意的三件事</b>
+    <p>① 交接文件第 9 節的參考電路圖 v1.1 Sheet 1 是雙輸入版本，已於 2026-07-05 取消，<b>不能照圖施工</b>。② 面板偏壓與 1.8 V 裕度還缺三種新面板的資料，其中面板資料由<b>我們（普羅森）負責提供</b>，而且會擋住 Layout。③ 客戶要求影像從 3-bit 改 6-bit，單張資料量約倍增，這會動到韌體與協定；目前拿到的 PDF 說明仍是 37.56 MB 的舊版本。</p>
+  </div>
+</section>
+
+<section id="arch">
+  <h2><span class="no">1</span>系統架構</h2>
+  <p class="sub">資料路徑由左至右；虛線框是接下來要交給生產廠商實作的部分。</p>
+  <div class="arch" role="img" aria-label="系統架構：上位機 Python 經 USB 2.0 到供電載板，直通到 XCZU1CG 核心板，再經 MIPI FPC 到 LCD 面板">
+    <div class="arch-inner">
+      <div class="blk"><span class="h">上位機</span><span class="s">Raspberry Pi（量產）<br>Windows PC（開發）</span><span>Python 應用層<br><code>send_usb_bulk.py</code></span></div>
+      <div class="arrow">USB 2.0<br>HS</div>
+      <div class="blk new"><span class="h">供電載板</span><span class="s">本次交接重點</span><span>J11 USB Device 接頭，訊號實體直通到核心板 J3-4/5</span><span class="s">不處理協定</span></div>
+      <div class="arrow">J1 / J3</div>
+      <div class="blk core"><span class="h">XCZU1CG 核心板</span>
+        <div class="split">
+          <div><b>PS · Vitis 韌體</b><br><span class="s">初始化、FIFO / DMA 控制、指令處理</span></div>
+          <div><b>PL · Vivado 硬體</b><br><span class="s">像素資料路徑、MIPI 時序、黑盒子暫存器</span></div>
+        </div>
+      </div>
+      <div class="arrow">MIPI<br>FPC J6/J7</div>
+      <div class="blk"><span class="h">Mask LCD</span><span class="s">Innolux 9.55″ / 17″（已驗）<br>7.1″ / 10″ / 13.5″（新定）</span><span>UV 曝光遮罩</span></div>
+    </div>
+    <div class="power">
+      <div class="bar">電源：客戶 12–24 V → J15 → 保護鏈 → 5 V 前級 → 6 條 POL + 3 條面板偏壓 → J1（30 pad）→ 核心板 / 面板</div>
+    </div>
+    <div class="legend"><span class="lc">Racer 已開發完成</span><span class="ln">待新廠商實作</span></div>
+  </div>
+
+  <h3>軟體三層分工</h3>
+  <p class="sub">出自「專案分析.txt」。依 README 說明，該檔是我們用 Copilot 分析 PDF 與部分原始碼得出的結論，不是 Racer 原文。</p>
+  <div class="tbl"><table>
+    <thead><tr><th>層級</th><th>負責內容</th><th>一句話</th></tr></thead>
+    <tbody>
+      <tr><td><b>Vivado</b>（硬體層）</td><td>FPGA 邏輯 / IP、Clock / Reset、記憶體 / DMA、LCD 介面、像素資料路徑、時序產生器、AXI 匯流排</td><td>FPGA 怎麼顯示影像</td></tr>
+      <tr><td><b>Vitis</b>（韌體層）</td><td>初始化周邊、控制 LCD Controller / DMA、設定 Frame Buffer、控制顯示流程</td><td>怎麼控制 FPGA 顯示影像</td></tr>
+      <tr><td><b>Python</b>（應用層）</td><td>讀取切層影像、影像處理、選擇曝光層、送資料、控制曝光流程，並搭配 Z 軸、光源與印表機狀態機</td><td>現在要顯示哪張圖</td></tr>
+    </tbody>
+  </table></div>
+  <p>對光固化而言，重點是每個像素是否形成正確的曝光 mask（ON / OFF），不是顏色好不好看。所以 RGB / BGR 順序差異只要不改變最終 mask，通常不影響列印結果。</p>
+</section>
+
+<section id="sw">
+  <h2><span class="no">2</span>軟體與通訊協定</h2>
+  <p class="sub">出自「USB2MIPI 嵌入式顯示系統使用說明.pdf」第 1–4 節。</p>
+
+  <h3>影像與記憶體規格</h3>
+  <div class="tbl"><table>
+    <tbody>
+      <tr><th>平台</th><td>Xilinx Zynq UltraScale+（ZynqMP），PS + PL</td></tr>
+      <tr><th>影像格式</th><td>24-bit RGB BMP，原始解析度 <span class="num">1668 × 7500</span></td></tr>
+      <tr><th>左右分割</th><td>軟體拆成左右兩通道，各 <span class="num">834 × 7500</span>；兩側各補 2 Bytes padding，使每行記憶體跨距為 <span class="num">2504 Bytes</span>（DMA 對齊）</td></tr>
+      <tr><th>動態 ID 注入</th><td>把層數 <code>img_index</code> 寫進左通道第一行的 padding（2 Bytes），讓每層 32-bit checksum 唯一；不影響實際投影像素</td></tr>
+      <tr><th>單張傳輸量</th><td>固定 <span class="num">37,560,000 Bytes</span>（= 2504 × 2 × 7500）</td></tr>
+      <tr><th>硬體緩衝</th><td>DDR 內 FIFO，最多 <span class="num">10</span> 個 slot，可非同步預載</td></tr>
+      <tr><th>黑盒子暫存器</th><td>PL 端 AXI4-Lite，位址 <code>0x80040000</code>，獨立於 APU 軟重置網域，當機時資料不流失</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>USB 與 Python 環境</h3>
+  <div class="tbl"><table>
+    <tbody>
+      <tr><th>介面</th><td>USB 2.0 High-Speed，FPGA 為 Device</td></tr>
+      <tr><th>裝置識別</th><td>VID <code>0x8888</code>、PID <code>0x9999</code></td></tr>
+      <tr><th>資料端點</th><td><code>EP_OUT 0x01</code>，Bulk Transfer</td></tr>
+      <tr><th>Python 套件</th><td><code>pyusb</code>（usb.core / usb.util）、<code>libusb_package</code>、<code>numpy</code></td></tr>
+      <tr><th>本地資料庫</th><td>執行目錄下自動讀寫 <code>checksum_database.json</code>，記錄 checksum 與檔名的對應，供斷點續印</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>指令表</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>按鍵</th><th>指令碼</th><th>行為</th></tr></thead>
+    <tbody>
+      <tr><td class="k">w</td><td class="num">0xA2 Write</td><td>送出上傳準備通知，經 Bulk OUT 把下一張 BMP 寫入 FIFO</td></tr>
+      <tr><td class="k">p</td><td class="num">0xA3 Start</td><td>啟動曝光：把 FIFO 最舊的切片推上畫面，checksum 寫入黑盒子鎖定</td></tr>
+      <tr><td class="k">s</td><td class="num">0xA4 Stop</td><td>立即停止曝光，一幀內切黑畫面，回到空閒</td></tr>
+      <tr><td class="k">d</td><td class="num">0xA5 Pop</td><td>釋放上一張已曝光切片的 FIFO 空間，指標前進一格</td></tr>
+      <tr><td class="k">c</td><td class="num">0xA0 Clear</td><td>清空 FIFO，讀寫指標歸零</td></tr>
+      <tr><td class="k">r</td><td class="num">0xA7 Reset</td><td>硬體管線深度重置（含 LCD 放電與 MIPI 核心重啟），約 4.5–5 秒；軟體同步重置 USB</td></tr>
+      <tr><td class="k">i</td><td class="num">0xB0–0xB4</td><td>讀取狀態：FIFO 剩餘空間、已印層數、韌體版本、錯誤碼</td></tr>
+      <tr><td class="k">k</td><td class="num">0xB3</td><td>讀取即時影像 checksum，與上位機佇列比對</td></tr>
+      <tr><td class="k">b</td><td class="num">0xB4</td><td>讀取黑盒子記錄的最後一次 checksum</td></tr>
+      <tr><td class="k">f</td><td class="num">0xA6</td><td>注入硬體斷流，測試異常攔截</td></tr>
+      <tr><td class="k">t / tN</td><td>自動排程</td><td>自動壓力測試；<code>t1.5</code> 表示每層曝光 1.5 秒連續測試</td></tr>
+      <tr><td class="k">q</td><td>離開</td><td>關閉背景監控執行緒並結束</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>錯誤碼與災難復原</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>錯誤碼</th><th>名稱</th><th>硬體行為</th></tr></thead>
+    <tbody>
+      <tr><td class="num">0x01</td><td>Buffer Underflow</td><td>FIFO 無資料仍啟動投影 → 攔截，防止空曝</td></tr>
+      <tr><td class="num">0x02</td><td>Buffer Overflow</td><td>10 個 slot 已滿 → 拒絕寫入直到釋放</td></tr>
+      <tr><td class="num">0x03</td><td>MIPI Fault</td><td>MIPI 斷流 → 一幀內切黑、鎖死管線、拒絕所有指令，必須硬體重置</td></tr>
+      <tr><td class="num">0x04</td><td>Hardware Resetting</td><td>重置期間所有外部指令被擋</td></tr>
+    </tbody>
+  </table></div>
+  <ul class="plain">
+    <li><b>看門狗</b>：Python 背景執行緒每 0.5 秒查詢 <code>0xB2</code>；偵測到 0x03 自動用 <code>0xB4</code> 撈黑盒子 checksum 並印出對應檔名。</li>
+    <li><b>Bulk 超時</b>：37.56 MB 傳輸超時固定 30,000 ms。</li>
+    <li><b>重置驗證</b>：重置後每 0.5 秒輪詢，最多 15 秒（30 次），未恢復即判定逾時。</li>
+    <li><b>斷點續印</b>：當機後依畫面印出的最後檔名，機台重新上電後從該層接續。</li>
+  </ul>
+</section>
+
+<section id="fw">
+  <h2><span class="no">3</span>韌體燒錄與環境設定</h2>
+  <p class="sub">出自 PDF 第 5–7 節。量產時的燒錄流程會以 QSPI 方式為基礎。</p>
+
+  <h3>JTAG 開發燒錄</h3>
+  <ul class="plain">
+    <li>Vitis 建 Application Project，匯入 Vivado 產生的 <code>.xsa</code>；確認 BSP 後 Build 出 <code>.elf</code>。</li>
+    <li>Boot Mode 切 JTAG，接好 JTAG 與 UART；Run As → Launch on Hardware (Single Application Debug)；看 UART Console 確認 PS 與 PL 喚醒。</li>
+  </ul>
+  <h3>QSPI Flash 脫機啟動</h3>
+  <ul class="plain">
+    <li>Xilinx → Create Boot Image，依序加入 <code>fsbl.elf</code>、FPGA 位元流 <code>.bit</code>、應用程式 <code>.elf</code>，產生 <code>BOOT.BIN</code>。</li>
+    <li>Xilinx → Program Flash，Image File 選 <code>BOOT.BIN</code>，FSBL 選 <code>fsbl.elf</code>，Program。</li>
+    <li>完成後斷電、Boot Mode 切 QSPI，重新上電即脫機執行。</li>
+  </ul>
+  <h3>Boot Mode 開關（SW1[0:3]）</h3>
+  <div class="tbl" style="max-width:420px"><table>
+    <thead><tr><th>模式</th><th>SW1[0:3]</th></tr></thead>
+    <tbody>
+      <tr><td>JTAG</td><td class="num">0000</td></tr>
+      <tr><td>QSPI</td><td class="num">0010</td></tr>
+      <tr><td>SD Card</td><td class="num">0101</td></tr>
+      <tr><td>eMMC</td><td class="num">0110</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sub">注意：這裡的 SW1 是開發板的 Boot Mode 開關，和供電載板文件中的 SW1（面板高壓手動切斷）是不同東西，位號重複。</p>
+  <h3>Windows USB 驅動（Zadig）</h3>
+  <p>用系統管理員身分執行 Zadig → Options → List All Devices → 找 VID 0x8888 / PID 0x9999 → 換成 <code>libusb-win32</code> 或 <code>WinUSB</code> → Replace Driver。Python 印出 “Device connected” 即成功。</p>
+  <div class="note crit">
+    <b class="t">目前 USB 是飛線</b>
+    <p>PDF 第 7 節的照片顯示：開發板上的 USB 2.0 是從 FPGA 直接焊跳線出來，沒有經過 IO 板上的 USB Hub。遇到 USB connect error 要先查跳線是否斷路。量產板必須把這段改成正式走線（見第 6 節 R4）。</p>
+  </div>
+</section>
+
+<section id="pwr">
+  <h2><span class="no">4</span>供電載板規格</h2>
+  <p class="sub">出自「供電載板_交接文件_to西柏科技.html」（Handover v1.0，2026-09-23）。以下皆為單一輸入的現行目標設計。</p>
+
+  <h3>交接範圍</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>本板負責</th><th>本板不負責</th></tr></thead>
+    <tbody><tr>
+      <td><ul class="plain" style="margin:0">
+        <li>6 條邏輯電源 + 3 條面板偏壓，經 J1 送核心板</li>
+        <li>輸入保護：保險絲、反接、TVS、soft-start、共模扼流圈</li>
+        <li>上下電時序與 PG gating</li>
+        <li>USB Device 直通、UART1、debug、風扇 PWM 拉到 2.54 mm header</li>
+        <li>面板電源的軟體控制與手動切斷</li>
+      </ul></td>
+      <td><ul class="plain" style="margin:0">
+        <li>不取代第一代 IOB（馬達、加熱、燈、感測器仍在原主板）</li>
+        <li>核心板本體、面板、線束、外殼</li>
+        <li><b>CE / UL / FCC 認證、量產測試治具</b></li>
+        <li>MIPI 訊號（走核心板 FPC）</li>
+        <li>USB 通訊協定（只做實體直通）</li>
+      </ul></td>
+    </tr></tbody>
+  </table></div>
+
+  <h3>新廠商承接的工作</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>階段</th><th>內容</th></tr></thead>
+    <tbody>
+      <tr><td>原理圖</td><td>依交接規格重繪；輸入級改單一接頭，其餘沿用 v1.1 架構</td></tr>
+      <tr><td>PCB Layout</td><td>4 層板、約 <span class="num">165 × 120 mm</span>；POL 靠近 J1、高壓隔離、散熱銅</td></tr>
+      <tr><td>BOM</td><td>長交期料（TPS54360、TPS65131、Micro-Fit）建議提前下單</td></tr>
+      <tr><td>打樣 + SMT</td><td>Proto <span class="num">10 pcs</span></td></tr>
+      <tr><td>Bring-up</td><td>九軌電壓、上下電時序、開機湧浪、面板偏壓、熱</td></tr>
+      <tr><td>文件</td><td>Schematic、Layout、BOM、測試報告</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>電源軌（經 J1 送核心板）</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Net</th><th>電壓</th><th>最大電流</th><th>J1 pad</th><th>用途</th><th>建議元件</th></tr></thead>
+    <tbody>
+      <tr><td class="k">VCC_0V85</td><td class="num">0.85 V</td><td class="num">571 mA</td><td class="num">16, 17</td><td>PS/PL core</td><td>U13 MP2161（1.5 A）</td></tr>
+      <tr><td class="k">VCC_1V1</td><td class="num">1.10 V</td><td class="num">584 mA</td><td class="num">13, 14</td><td>LPDDR4 / PS</td><td>U14 TPS62811（1 A）</td></tr>
+      <tr><td class="k">VCC_1V2</td><td class="num">1.20 V</td><td class="num">230 mA</td><td class="num">10, 11</td><td>PS / PHY</td><td>U15 TPS62811（1 A）</td></tr>
+      <tr><td class="k">VCC_1V8</td><td class="num">1.80 V</td><td class="num">1348 mA</td><td class="num">7, 8</td><td>I/O、VCCAUX、PS-GTR</td><td>U11 MP2143（<b>≥ 3 A</b>）</td></tr>
+      <tr><td class="k">VCC_3V3</td><td class="num">3.30 V</td><td class="num">410 mA</td><td class="num">4, 5</td><td>I/O / 周邊</td><td>U12 TPS62082（1.2 A）</td></tr>
+      <tr><td class="k">VCC_5V</td><td class="num">5.0 V</td><td class="num">30 mA</td><td class="num">1, 2</td><td>USB-UART bridge</td><td>由 U10 5 V 直取</td></tr>
+      <tr><td class="k">PVCC_1V8</td><td class="num">+1.8 V</td><td class="num">125 mA</td><td class="num">19, 20</td><td>面板 VDDIO</td><td>U16 → U17A</td></tr>
+      <tr><td class="k">PAVDD</td><td class="num">+6.2 V</td><td class="num">67 mA</td><td class="num">22, 23</td><td>面板 AVDD</td><td>U16 → U17B</td></tr>
+      <tr><td class="k">PAVEE</td><td class="num">−6.2 V</td><td class="num">65 mA</td><td class="num">25, 26</td><td>面板 AVEE</td><td>U16 → U17C</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sub">GND：pad 3, 6, 9, 12, 15, 18, 21, 24, 27–30（12 個回流）。J1 為 30 pad、2.0 mm pitch castellated，由核心板決定，不可更動。前級 U10 TPS54360（輸入 4.5–60 V，輸出 5 V / 3.5 A）；面板偏壓 U16 TPS65131；時序 U18 TPS386596。</p>
+  <div class="note info">
+    <b class="t">1.8 V 必須 ≥ 3 A</b>
+    <p>穩態只有 1348 mA，但 PS-GTR termination 動態可衝到 1–2 A，且 VCCAUX 共用此軌。若照穩態選 2 A 元件，GTR 活動時會掉壓。</p>
+  </div>
+
+  <h3>輸入級與保護</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>位號</th><th>元件</th><th>說明</th><th>狀態</th></tr></thead>
+    <tbody>
+      <tr><td class="k">J15</td><td>Molex 43650-0200（Micro-Fit 3.0，2-ckt，直角）</td><td>唯一電源輸入；線端 43645-0200 + 43030 端子</td><td><span class="chip ok">已定案</span></td></tr>
+      <tr><td class="k">F1</td><td>Fuse 2–3 A</td><td>過流保護</td><td><span class="chip mute">沿用</span></td></tr>
+      <tr><td class="k">Q1</td><td>P-FET，Vds ≥ 30 V</td><td>反接保護</td><td><span class="chip mute">沿用</span></td></tr>
+      <tr><td class="k">D1</td><td>TVS <b>SMBJ30A</b></td><td>客戶參考圖用 SMBJ14A，只適用 12 V，24 V 下會持續導通</td><td><span class="chip warn">必須偏離客戶圖</span></td></tr>
+      <tr><td class="k">CM1</td><td>共模扼流圈 + 200 Ω ferrite</td><td>傳導 EMI，跨 V+ 與 return 兩線</td><td><span class="chip mute">沿用</span></td></tr>
+      <tr><td class="k">C13</td><td>soft-start 電容（U10.SS）</td><td>壓開機湧浪 &lt; 3.5 A</td><td><span class="chip mute">沿用</span></td></tr>
+      <tr><td class="k">J10</td><td>Würth WR-TBL 螺絲端子</td><td>原 24 V 輸入</td><td><span class="chip crit">已刪除</span></td></tr>
+      <tr><td class="k">U19/U20</td><td>LM74700 + FET</td><td>原雙輸入 OR-ing</td><td><span class="chip crit">已刪除</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>上下電時序（U18 TPS386596）</h3>
+  <div class="seq">FPGA ：0.85 V 先於 VCCO / 1.8 V；全部 PG 成立後才放 PS_POR
+面板開機：VDDIO 1.8 V → AVDD +6.2 V → AVEE −6.2 V    T2 = 200 ms, T8 = 120 ms
+面板關斷：AVEE → AVDD → VDDIO（含 0xA7 放電）     T9 = 150 ms, T14 = 100 ms</div>
+  <p>面板 ±6.2 V 只在所有邏輯軌穩定後才致能。USB 協定與本板唯一的交集是 <code>0xA7</code> 重置的面板受控放電，所以 U17A/B/C 與 sequencer 必須支援依序降壓。另有 SW1 手動開關可單獨切斷面板高壓，供維修使用。</p>
+
+  <h3>對外接頭</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>位號</th><th>介面</th><th>定義</th></tr></thead>
+    <tbody>
+      <tr><td class="k">J15</td><td>電源輸入</td><td>Micro-Fit 3.0 2-ckt 直角，12–24 V</td></tr>
+      <tr><td class="k">J1</td><td>送核心板</td><td>30 pad castellated</td></tr>
+      <tr><td class="k">J3</td><td>核心板左側</td><td>pad 4/5 = USB DP/DN；pad 1/2 = UART1 TX/RX；pad 10–17 PS-GTR 未用</td></tr>
+      <tr><td class="k">J2</td><td>核心板頂側</td><td>pad 36–41 MIO（3V3）；pad 7/8 Ethernet LED</td></tr>
+      <tr><td class="k">J11</td><td>USB 2.0 Device</td><td>VBUS(sense)、D+、D−、GND；板端不對外供 5 V</td></tr>
+      <tr><td class="k">J12</td><td>UART1</td><td>TX、RX、GND、3V3</td></tr>
+      <tr><td class="k">J13</td><td>Debug</td><td>SWD、UART0、I²C1、RST</td></tr>
+      <tr><td class="k">J14</td><td>風扇 PWM</td><td>需獨立穩壓軌或 PWM buck，不可直接吃 Vin；規格未定</td></tr>
+      <tr><td class="k">JP1</td><td>面板選擇</td><td>1-2 = 9.55″；2-3 = 17″ → PANEL_ID 給 PS GPIO</td></tr>
+      <tr><td class="k">SW1</td><td>面板高壓切斷</td><td>維修用</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>功耗、接地與溫度</h3>
+  <div class="tbl"><table>
+    <tbody>
+      <tr><th>功耗預算</th><td>邏輯 ≈ 5.3 W + 面板偏壓 ≈ 1.0 W + 轉換損耗 ≈ 1.1 W + 風扇與餘裕 ≈ 1.5 W = <b>≈ 8.9 W</b>（12 V 下約 0.74 A）。真正的限制是客戶線上 3.5 A 保險絲，開機湧浪必須在 bring-up 實測。</td></tr>
+      <tr><th>接地</th><td>系統參考地 = 客戶 12 V 電源地；單點接地；USB GND 只作訊號參考，不是電源回流</td></tr>
+      <tr><th>EMC / ESD</th><td>USB 差動對要加 ESD 保護；USB shield 接機殼；輸入加共模扼流圈</td></tr>
+      <tr><th>操作溫度</th><td>全系統商規 0–70 °C（07-05 定案）。上限由 mask LCD 決定（UV 列印時須 ≤ 50 °C，無工業級版本）</td></tr>
+      <tr><th>樣品線材</th><td>每片隨附 2 條：43645-0200 + 43030 端子、22 AWG、300 mm、另一端裸線上錫。量產線束由使用方自定</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="change">
+  <h2><span class="no">5</span>設計變更與文件更正</h2>
+  <p class="sub">電源輸入規格在三週內改了五次。舊檔案裡可能還留著過時內容，交給新廠商時要明確說明以哪一版為準。</p>
+  <div class="tl">
+    <div class="dead"><span class="d">2026-06-12</span>Spec v0.2：12 V / 2 A 單一電壓</div>
+    <div class="dead"><span class="d">2026-06-19</span>USB ICD：12 V / 2 A，DC jack 5.5 × 2.1 mm</div>
+    <div class="dead"><span class="d">2026-06-22</span>Proposal v1.0：改單一 24 V / 4 A</div>
+    <div class="dead"><span class="d">2026-06-23</span>12 V 與 24 V 都要，需相容多種尺寸 LCD</div>
+    <div class="dead"><span class="d">2026-07-02</span>客戶確認寬輸入 12–24 V</div>
+    <div class="dead"><span class="d">2026-07-03</span>Spec v2.0 / Proposal v1.1：雙輸入 + OR-ing（已失效）</div>
+    <div class="now"><span class="d">2026-07-05</span><b>現行目標</b>：單一輸入 Molex 43650-0200；刪除螺絲端子與 OR-ing。同日定案：商規 0–70 °C、面板改為 7.1″ 8K / 10″ 16K / 13.5″ 16K、樣品隨附 2 條對接線</div>
+  </div>
+
+  <h3>舊文件的錯誤，以此為準</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>項目</th><th>舊說法（錯）</th><th>正確</th></tr></thead>
+    <tbody>
+      <tr><td>USB D+/D− 腳位</td><td>舊 ICD 回覆：J3-10 = D+、J3-11 = D−</td><td><b>J3-4 (DP) / J3-5 (DN)</b>。J3-10/11 是 PS-GTR 高速差動對，與 USB 2.0 無關</td></tr>
+      <tr><td>USB 接頭</td><td>舊 IOB v2.0 demo 板的 J30/J32 Type-A（Host 母座）</td><td>Device 模式一律以 <b>Mini-USB Type-B（J8）</b>為準</td></tr>
+      <tr><td>參考電路圖 Sheet 1</td><td>v1.1 雙輸入 + OR-ing</td><td>依交接文件 §4 單一輸入；Sheet 2/3/4 仍有效</td></tr>
+      <tr><td>TVS</td><td>客戶參考圖 SMBJ14A</td><td><b>SMBJ30A</b></td></tr>
+      <tr><td>VBUS</td><td>—</td><td>Device 模式 VBUS 由 Host 供電，本板只偵測、不得對外供 5 V</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="risk">
+  <h2><span class="no">6</span>生產前風險與待辦</h2>
+  <p class="sub">R1–R4 是交接文件 §11 列出的待決事項；R5 以後是比對三份資料後，我們這邊額外看到的落差，建議在發包前和 Racer 或新廠商確認。</p>
+  <ol class="risk">
+    <li>
+      <div class="top"><b>三種新面板的偏壓電壓與 source-driver 電流</b><span class="chip crit">擋 Layout</span><span class="chip info">負責：普羅森</span></div>
+      <p>7.1″ 8K（群創）、10″ 16K、13.5″ 16K 的數值還沒提供。大尺寸面板電流較高，要據此重算面板偏壓與 1.8 V 裕度。目前規格是依 Innolux 9.55″ / 17″ 算的。</p>
+      <p class="act">由我們（交接文件寫 Darrell / Katel）盡快向面板廠取得規格，並同步給 Racer 與新廠商。</p>
+    </li>
+    <li>
+      <div class="top"><b>1.8 V DC-DC 最終定額</b><span class="chip warn">影響選型</span><span class="chip info">負責：Racer</span></div>
+      <p>取決於 PS-GTR link speed 與 lane 數，目前建議 ≥ 3 A。</p>
+      <p class="act">請 Racer 在結案前書面回覆。</p>
+    </li>
+    <li>
+      <div class="top"><b>Micro-Fit 接頭出線方向</b><span class="chip warn">影響機構</span><span class="chip info">負責：Stratasys / 普羅森</span></div>
+      <p>板端 43650-0200 是直角 header，需和客戶機構確認方向。</p>
+    </li>
+    <li>
+      <div class="top"><b>風扇軌規格未定</b><span class="chip warn">影響 BOM</span><span class="chip info">負責：普羅森</span></div>
+      <p>J14 需獨立穩壓軌或 PWM buck，電壓與電流還沒定。</p>
+    </li>
+    <li>
+      <div class="top"><b>JP1 面板選擇只涵蓋 9.55″ / 17″</b><span class="chip warn">文件不一致</span></div>
+      <p>07-05 已把面板清單改成 7.1″ / 10″ / 13.5″，但 JP1 仍是兩段式（9.55″ 或 17″），PANEL_ID 只能表示兩種面板。三種新面板需要至少 2 bit 的識別，韌體的面板時序選擇也要對應。</p>
+      <p class="act">確認新面板清單後，請 Racer 決定 PANEL_ID 改成幾位元，以及韌體是否要跟著改。</p>
+    </li>
+    <li>
+      <div class="top"><b>影像 3-bit → 6-bit，單張約 75 MB</b><span class="chip crit">韌體與協定變動</span><span class="chip info">負責：Racer</span></div>
+      <p>交接文件說這不影響供電板，但會改到 USB 封包定義、DDR FIFO 槽數與韌體時序。我們拿到的 PDF 說明仍是固定 37,560,000 Bytes、10 個 slot、30 秒超時的版本。若保持 10 個 slot，FIFO 需要約 750 MB DDR，要確認核心板 DDR 容量夠不夠；傳輸時間約倍增，30 秒超時與曝光節拍也要重新驗證。</p>
+      <p class="act">確認 6-bit 版本是否在 Racer 的交付範圍內，以及收到的 USB2MIPI17 原始碼是哪一版。</p>
+    </li>
+    <li>
+      <div class="top"><b>USB 目前是飛線，量產要正式走線</b><span class="chip warn">Layout 注意</span></div>
+      <p>開發板上 USB 是從 FPGA 直接焊跳線。量產載板要把 J3-4/5 拉到 J11，以 USB 2.0 HS 規範走 90 Ω 差動對並加 ESD。這段沒有經過完整的正式走線驗證。</p>
+      <p class="act">Bring-up 項目加入 USB HS 長時間傳輸測試（例如用 <code>t</code> 壓力測試跑數千層）。</p>
+    </li>
+    <li>
+      <div class="top"><b>交付檔案是否收齊</b><span class="chip warn">待確認</span></div>
+      <p>交接文件 §10 列了 KiCad 原理圖、Netlist、Spec v2.0（中英）、Core Board Datasheet v1.2、USB Protocol Specification、面板規格、IOB 1V1 DSN、Stratasys 輸入級參考圖。目前 <code>RacerTech_provided</code> 與上層資料夾裡只看到 USB2MIPI17 專案（含 <code>.xsa</code>），沒找到上述文件。</p>
+      <p class="act">向 Racer 索取完整清單內的檔案，再一起轉給新廠商。</p>
+    </li>
+    <li>
+      <div class="top"><b>量產燒錄與測試治具不在範圍內</b><span class="chip warn">需另外規劃</span></div>
+      <p>交接範圍排除了量產測試治具與認證。量產時每片核心板都要燒 <code>BOOT.BIN</code> 到 QSPI 並切 Boot Mode，目前只有手動的 Vitis 流程；認證（CE / UL / FCC）也沒人負責。</p>
+      <p class="act">和新廠商討論量產燒錄方式（例如治具加批次腳本）與出貨測試項目；認證由誰負責要另外決定。</p>
+    </li>
+    <li>
+      <div class="top"><b>開機湧浪必須實測</b><span class="chip warn">Bring-up 必驗</span></div>
+      <p>客戶線上是 3.5 A 保險絲，soft-start 沒壓好會在客戶端跳保險絲。要在 12 V 與 24 V 兩種輸入下都量測。</p>
+    </li>
+  </ol>
+</section>
+
+<section id="check">
+  <h2><span class="no">7</span>交接檢查清單</h2>
+  <p class="sub">交接文件 §12 建議雙方逐項確認後簽署。</p>
+  <div class="tbl"><table>
+    <thead><tr><th>項目</th><th>負責</th></tr></thead>
+    <tbody>
+      <tr><td>已收到 §10 全部交付檔案，無缺件</td><td>西柏</td></tr>
+      <tr><td>已理解設計變更：依單一輸入規格，不照 v1.1 Sheet 1</td><td>西柏</td></tr>
+      <tr><td>已確認 J1 pad map 不可更動，並據此規劃 Layout</td><td>西柏</td></tr>
+      <tr><td>已確認 TVS 用 SMBJ30A（非 SMBJ14A）</td><td>西柏</td></tr>
+      <tr><td>已確認 1.8 V 軌設計 ≥ 3 A</td><td>西柏</td></tr>
+      <tr><td>已確認上下電時序，含 0xA7 受控放電</td><td>西柏</td></tr>
+      <tr><td>已提供三種面板的偏壓電壓與 source-driver 電流</td><td><b>普羅森</b></td></tr>
+      <tr><td>已回覆 1.8 V DC-DC 最終定額</td><td>Racer</td></tr>
+      <tr><td>確認交付時程與里程碑（schematic / layout / proto / bring-up）</td><td>雙方</td></tr>
+      <tr><td>指定雙方技術窗口與聯絡方式</td><td>雙方</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="src">
+  <h2><span class="no">附錄</span>資料來源</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>檔案</th><th>來源</th><th>內容</th></tr></thead>
+    <tbody>
+      <tr><td>專案分析.txt</td><td>普羅森內部（Copilot 分析）</td><td>Vivado / Vitis / Python 三層分工；RGB/BGR 對曝光的影響</td></tr>
+      <tr><td>USB2MIPI 嵌入式顯示系統使用說明.pdf</td><td>Racer Tech（5 頁，掃描檔）</td><td>系統規格、Python 環境、指令表、錯誤碼、燒錄流程、Zadig、Boot Mode、USB 飛線說明</td></tr>
+      <tr><td>供電載板_交接文件_to西柏科技.html</td><td>Racer Tech，Handover v1.0，2026-09-23（標示 CONFIDENTIAL）</td><td>供電載板完整設計交接：範圍、變更、電源樹、保護、時序、腳位、待決事項、檢查清單</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sub">同資料夾另有 Racer 提供的原始碼（USB2MIPI17.zip，已解至上層 USB2MIPI17 資料夾）、操作錄影（操作方式.mp4）與 python_sendUsbBulk.md，本報告未納入其內容。</p>
+</section>
+
+<footer>Phrozen 內部整理 · 2026-10-06 · 內容引用自 Racer Tech 標示為機密的交接文件，對外分享前請先確認權限。</footer>
+</main>
+</div>
+</body>
+</html>
