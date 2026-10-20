@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>文件目錄</title>
+<title>專案目錄</title>
 <style>
   :root {
     --bg: #0f1115;
@@ -60,36 +60,38 @@
 </head>
 <body>
 <main>
-  <h1>文件目錄</h1>
-  <p class="lead comment">團隊 review 用的整理文件。</p>
+  <h1>專案目錄</h1>
+  <p class="lead comment">團隊 review 用的整理文件，依專案分類。</p>
 
-  <h2>FPGA / 光引擎板</h2>
+  <h2>專案</h2>
   <ul>
     <li>
-      <a class="doc" href="powerboard_handover_toCYP.html">
-        <span class="title">XCZU1CG 供電載板 — 設計交接文件（奔馳科技提供）</span>
-        <span class="desc">交付西柏科技的 12–24 V 供電／載板設計：交接範圍、電源架構與時序、J1 Pad Map、接頭與 EMC、參考電路圖。</span>
+      <a class="doc" href="Vigil_Cambox/vigil_cambox.html">
+        <span class="title">Vigil Cambox</span>
+        <span class="desc">尚無文件</span>
       </a>
     </li>
     <li>
-      <a class="doc" href="RacerTechXCYP_USB2MIPI_handover_report.html">
-        <span class="title">USB2MIPI 光引擎板交接整理</span>
-        <span class="desc">RacerTech XCYP USB2MIPI 交接報告：系統架構、使用說明重點、QSPI 燒錄流程。</span>
+      <a class="doc" href="FPGA_Board/fpga_board.html">
+        <span class="title">FPGA Board</span>
+        <span class="desc">FPGA / 光引擎板、LCD 面板 · 3 份文件</span>
+      </a>
+    </li>
+    <li>
+      <a class="doc" href="Trim_plus/trim_plus.html">
+        <span class="title">Trim+</span>
+        <span class="desc">尚無文件</span>
+      </a>
+    </li>
+    <li>
+      <a class="doc" href="Forge/forge.html">
+        <span class="title">Forge</span>
+        <span class="desc">尚無文件</span>
       </a>
     </li>
   </ul>
 
-  <h2>LCD 面板</h2>
-  <ul>
-    <li>
-      <a class="doc" href="innolux_lcd_3bits_to_6bits.html">
-        <span class="title">ZE170DA-01A (H032) 3bit → 6bit Mode 切換重點整理</span>
-        <span class="desc">Innolux 面板：硬體架構推測、Power On 時序、6bit Mode 設定與開機流程範例。</span>
-      </a>
-    </li>
-  </ul>
-
-  <footer class="comment">新增文件時，在上方對應分類加一個 &lt;li&gt; 即可。</footer>
+  <footer class="comment">新增專案時：開資料夾（名稱不要用 + 等特殊符號）、放一個專案頁，再在上方加一個 &lt;li&gt;。</footer>
 </main>
 </body>
 </html>
