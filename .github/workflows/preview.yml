@@ -8,7 +8,9 @@ on:
       - synchronize
       - closed
 
-concurrency: preview-${{ github.ref }}
+concurrency:
+  group: preview-${{ github.event.number }}
+  cancel-in-progress: true
 
 jobs:
   deploy-preview:
@@ -22,3 +24,4 @@ jobs:
         uses: rossjrw/pr-preview-action@v1
         with:
           source-dir: ./
+          preview-branch: gh-pages
