@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XCZU1CG 供電載板 — 設計交接文件</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+:root{
+  --paper:#FBFBFA; --panel:#FFFFFF; --sunk:#F1F2F0; --sunk2:#E7E9E6;
+  --ink:#111518; --ink2:#48515A; --ink3:#79838C;
+  --hair:#DDE0DD; --hair2:#C2C7C3;
+  --blue:#17557A; --blue-w:#E4EEF4;
+  --teal:#0F766E;
+  --warn:#8A5A08; --warn-w:#FBF1DC;
+  --risk:#9E241A; --risk-w:#FAE6E3;
+  --ok:#1E6642; --ok-w:#E1EFE7;
+  --d:"Archivo","Noto Sans TC",sans-serif;
+  --m:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --c:"Noto Sans TC","PingFang TC",sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--c);
+  font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased}
+.shell{max-width:1140px;margin:0 auto;padding-left:26px;padding-right:26px}
+
+nav{position:sticky;top:0;z-index:50;background:rgba(251,251,250,.97);
+  backdrop-filter:blur(6px);border-bottom:1px solid var(--hair)}
+.nav-in{max-width:1140px;margin:0 auto;padding:10px 26px;display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+nav a{font-family:var(--m);font-size:11px;color:var(--ink2);text-decoration:none;
+  padding:4px 9px;border:1px solid transparent;white-space:nowrap}
+nav a:hover{color:var(--blue);border-color:var(--hair2);background:var(--panel)}
+.nav-act{padding-bottom:0;gap:8px}
+nav a.act{color:var(--blue);font-weight:600;border-color:var(--hair2)}
+nav a.act:hover{border-color:var(--blue)}
+.nav-t{font-family:var(--m);font-size:11px;font-weight:600;color:var(--blue);letter-spacing:.1em;margin-right:6px}
+
+header{padding-block:42px 0}
+.doctype{font-family:var(--m);font-size:11px;letter-spacing:.22em;color:var(--blue);font-weight:600;margin-bottom:14px}
+h1{font-family:var(--d);font-weight:800;font-size:clamp(27px,4.4vw,40px);line-height:1.08;
+  margin:0 0 10px;letter-spacing:-.02em;text-wrap:balance}
+.sub{font-size:17px;color:var(--ink2);margin:0 0 24px}
+.docmeta{border-top:2px solid var(--ink);border-bottom:1px solid var(--hair);
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0}
+.dm{padding:16px 20px 16px 0;border-right:1px solid var(--hair)}
+.dm:last-child{border-right:none}
+.dm-l{font-family:var(--m);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+.dm-v{font-size:15px;font-weight:700;margin-top:5px}
+.dm-s{font-size:13px;color:var(--ink2);margin-top:2px}
+
+section{padding-block:44px 6px;scroll-margin-top:96px}
+h2{font-family:var(--d);font-weight:800;font-size:24px;margin:0 0 6px;letter-spacing:-.01em}
+h2 .num{color:var(--blue);font-family:var(--m);font-size:17px;font-weight:600;margin-right:12px}
+.h2n{color:var(--ink3);font-size:13.5px;margin:0 0 22px;max-width:80ch}
+h3{font-family:var(--d);font-weight:700;font-size:17px;margin:28px 0 11px}
+h3 .num{color:var(--blue);font-family:var(--m);font-size:14px;margin-right:9px}
+p{margin:0 0 12px}
+
+.note{border-left:4px solid var(--blue);background:var(--blue-w);padding:18px 22px;margin:16px 0}
+.note.risk{border-left-color:var(--risk);background:var(--risk-w)}
+.note.warn{border-left-color:var(--warn);background:var(--warn-w)}
+.note.ok{border-left-color:var(--ok);background:var(--ok-w)}
+.note-h{font-family:var(--d);font-weight:700;font-size:15.5px;margin-bottom:8px}
+.note p{margin:0 0 8px;font-size:14.5px;line-height:1.7}
+.note p:last-child{margin-bottom:0}
+
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(195px,1fr))}
+.card{background:var(--panel);border:1px solid var(--hair);padding:19px 21px}
+.card-l{font-family:var(--m);font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--blue);font-weight:600;margin-bottom:9px}
+.card h4{font-family:var(--d);font-weight:700;font-size:16px;margin:0 0 7px}
+.card p{margin:0 0 8px;font-size:14px;line-height:1.65;color:var(--ink2)}
+.card p:last-child{margin-bottom:0}
+.stat{font-family:var(--d);font-weight:800;font-size:30px;line-height:1;letter-spacing:-.01em}
+.stat-s{font-size:12.5px;color:var(--ink3);margin-top:7px;line-height:1.5}
+
+.tw{overflow-x:auto;border:1px solid var(--hair);background:var(--panel);margin:4px 0 0}
+table{border-collapse:collapse;width:100%;min-width:580px;font-size:14px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--hair);vertical-align:top}
+thead th{background:var(--sunk);font-family:var(--d);font-weight:700;font-size:11px;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+td.n,th.n{text-align:right;font-family:var(--m);font-variant-numeric:tabular-nums;white-space:nowrap}
+tfoot td{background:var(--sunk);font-weight:700;border-top:2px solid var(--ink)}
+code{font-family:var(--m);font-size:.88em;background:var(--sunk);padding:1px 5px}
+.cap{font-size:12.5px;color:var(--ink3);margin:10px 0 0;line-height:1.6}
+
+.tag{display:inline-block;font-family:var(--m);font-size:10px;font-weight:600;
+  letter-spacing:.05em;padding:2px 7px;white-space:nowrap}
+.t-fix{background:var(--ok-w);color:var(--ok)}
+.t-chg{background:var(--warn-w);color:var(--warn)}
+.t-open{background:var(--risk-w);color:var(--risk)}
+.t-ref{background:var(--sunk2);color:var(--ink2)}
+
+/* schematic */
+.sheet{background:var(--panel);border:1px solid var(--hair);padding:14px;margin-bottom:18px;overflow-x:auto}
+.figtitle{font-family:var(--d);font-weight:700;font-size:15px;margin:2px 6px 4px;color:var(--blue)}
+.fignote{font-size:12.5px;color:var(--ink3);margin:0 6px 10px;line-height:1.55}
+.sheet svg{display:block;width:100%;height:auto;min-width:900px}
+.sheet svg text{font-family:-apple-system,"Segoe UI",Arial,sans-serif}
+.sheet .ic{fill:#F0FDFA;stroke:#0F766E;stroke-width:1.4}
+.sheet .conn{fill:#EEF2FF;stroke:#4338CA;stroke-width:1.4}
+.sheet .pas{fill:#FFFFFF;stroke:#475569;stroke-width:1.3}
+.sheet .lbl{font-size:11px;font-weight:700;fill:#0F172A}
+.sheet .ref{font-size:9.5px;fill:#64748B}
+.sheet .val{font-size:9.5px;fill:#0F766E;font-weight:600}
+.sheet .net{font-size:9.5px;fill:#B91C1C;font-weight:700}
+.sheet .netp{font-size:9.5px;fill:#7C3AED;font-weight:700}
+.sheet .w{stroke:#334155;stroke-width:1.4;fill:none}
+.sheet .wp{stroke:#7C3AED;stroke-width:1.8;fill:none}
+.sheet .wr{stroke:#B91C1C;stroke-width:1.8;fill:none}
+.sheet .gnd{stroke:#334155;stroke-width:1.4}
+
+.figcap{border-top:1px solid var(--hair);margin-top:12px;padding-top:14px;
+  display:grid;grid-template-columns:1fr 330px;gap:24px}
+.figcap-b h5{font-family:var(--d);font-weight:700;font-size:13px;margin:0 0 7px;color:var(--blue)}
+.figcap-b p{margin:0 0 10px;font-size:14px;line-height:1.7;color:var(--ink2)}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:0 0 11px;font-family:var(--m);font-size:11px}
+.flow span{background:var(--sunk);padding:4px 8px;color:var(--ink)}
+.flow span.hot{background:var(--blue-w);color:var(--blue);font-weight:600}
+.flow span.off{background:var(--risk-w);color:var(--risk);text-decoration:line-through}
+.flow i{color:var(--ink3);font-style:normal}
+.parts table{min-width:0;font-size:12.5px}
+.parts th,.parts td{padding:6px 10px}
+.parts thead th{font-size:10px}
+
+/* checklist */
+.ck{display:flex;flex-direction:column;gap:9px}
+.ck-r{display:grid;grid-template-columns:30px 1fr 150px;gap:14px;align-items:start;
+  background:var(--panel);border:1px solid var(--hair);padding:14px 18px}
+.ck-b{width:17px;height:17px;border:2px solid var(--ink3);margin-top:3px}
+.ck-r p{margin:0;font-size:14px;line-height:1.6}
+.ck-r .who{font-family:var(--m);font-size:11.5px;color:var(--ink3);text-align:right}
+
+footer{margin-top:50px;padding-block:24px 50px;border-top:2px solid var(--ink);
+  font-family:var(--m);font-size:11px;color:var(--ink3);
+  display:flex;flex-wrap:wrap;gap:8px 26px;justify-content:space-between}
+
+@media (max-width:900px){.figcap{grid-template-columns:1fr}}
+@media (max-width:760px){.ck-r{grid-template-columns:30px 1fr;gap:10px}.ck-r .who{grid-column:2;text-align:left}}
+@media print{nav{display:none}.sheet svg{min-width:0}section{break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<nav><div class="nav-in nav-act">
+  <a class="act" href="#top">▲ 回到最上方</a><a class="act" href="index.html">← 回上一頁</a>
+</div><div class="nav-in">
+  <span class="nav-t">目次</span>
+  <a href="#s0">0 摘要</a><a href="#s1">1 範圍</a><a href="#s2">2 設計變更</a>
+  <a href="#s3">3 電源架構</a><a href="#s4">4 輸入保護</a><a href="#s5">5 時序</a>
+  <a href="#s6">6 J1 Pad Map</a><a href="#s7">7 連接器</a><a href="#s8">8 接地/溫度</a>
+  <a href="#s9">9 參考電路圖</a><a href="#s10">10 交付檔案</a><a href="#s11">11 待決</a><a href="#s12">12 檢查清單</a>
+</div></nav>
+
+<div class="shell">
+
+<header id="top">
+  <div class="doctype">DESIGN HANDOVER　設計交接文件</div>
+  <h1>XCZU1CG FPGA 供電／載板<br>設計交接文件</h1>
+  <p class="sub">光固化 3D 列印光引擎 · 寬輸入 12–24 V 供電與載板 · 交付西柏科技接手實作</p>
+
+  <div class="docmeta">
+    <div class="dm"><div class="dm-l">交付方</div><div class="dm-v">奔馳科技 Racer Tech</div><div class="dm-s">硬體工程</div></div>
+    <div class="dm"><div class="dm-l">接手方</div><div class="dm-v">西柏科技 Cypress</div><div class="dm-s">原理圖 · Layout · 打樣 · Bring-up</div></div>
+    <div class="dm"><div class="dm-l">終端客戶 / 窗口</div><div class="dm-v">Stratasys（以色列）</div><div class="dm-s">窗口：普羅森 Phrozen</div></div>
+    <div class="dm"><div class="dm-l">文件版本</div><div class="dm-v">Handover v1.0</div><div class="dm-s">2026-09-23</div></div>
+  </div>
+</header>
+
+<section id="s0">
+  <h2><span class="num">0</span>交接摘要</h2>
+  <p class="h2n">一頁看懂要做什麼。細節從第 3 節起。</p>
+
+  <div class="grid g4" style="margin-bottom:22px">
+    <div class="card"><div class="stat" style="color:var(--blue)">12–24 V</div><div class="stat-s">寬輸入單一 SKU<br>單一電源接頭</div></div>
+    <div class="card"><div class="stat">6 ＋ 3</div><div class="stat-s">六條 logic rails<br>三條面板 bias rails</div></div>
+    <div class="card"><div class="stat">≈ 8.9 W</div><div class="stat-s">穩態總功耗<br>核心板 ＋ 17″ 面板</div></div>
+    <div class="card"><div class="stat" style="color:var(--warn)">&lt; 3.5 A</div><div class="stat-s">inrush 硬上限<br>客戶線上 3.5 A fuse</div></div>
+  </div>
+
+  <div class="note">
+    <div class="note-h">一句話：這塊板把 12–24 V 轉成 FPGA 核心板要的九條電，再經 J1 送進去。</div>
+    <p>XCZU1CG 核心板<b>沒有 on-board PMIC</b>，所有工作電壓都必須外部產生後，經其 castellated 邊的 J1 電源入口（30 pad）餵入——這是本板存在的唯一理由。除了供電，本板另負責把 USB／UART／debug 拉到 2.54 mm header，以及面板電源的軟體與手動開關。</p>
+  </div>
+
+  <div class="note warn">
+    <div class="note-h">接手前必讀：目標設計是「單一電源輸入」</div>
+    <p>第 9 節的參考電路圖 v1.1 畫的是<b>雙輸入</b>版本，該版本已於 2026-07-05 被客戶推翻。<b>請以第 3、4 節的單一輸入規格為實作依據</b>，不要照 v1.1 的 Sheet 1 施工。詳見第 2 節。</p>
+  </div>
+</section>
+
+<section id="s1">
+  <h2><span class="num">1</span>交接範圍與邊界</h2>
+  <p class="h2n">先把「做什麼」和「不做什麼」講清楚，避免與既有 IOB 混淆。</p>
+
+  <div class="grid g2">
+    <div class="card" style="border-left:3px solid var(--ok)">
+      <div class="card-l">本板負責</div>
+      <p><b>電源</b>　六條 logic rails ＋ 三條面板 bias rails，經 J1（30 pad）送核心板</p>
+      <p><b>保護</b>　輸入級 fuse／反接／TVS／soft-start／共模扼流圈</p>
+      <p><b>時序</b>　supervisor／sequencer 控制上下電順序與 PG gating</p>
+      <p><b>介面</b>　USB（Device 直通）、UART1、debug header、風扇 PWM，皆拉到 2.54 mm header</p>
+      <p><b>開關</b>　面板電源的軟體控制 ＋ 手動切斷（SW1）</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--ink3)">
+      <div class="card-l">本板不負責</div>
+      <p><b>不取代第一代 IOB</b>（<code>3D_PRINT_16K_IOB_2V0</code>）。馬達、加熱器、燈具、風扇陣列、感測器、ADC 等功能仍留在印表機既有主板上。</p>
+      <p><b>不含</b>　核心板本體、面板、線材 harness、外殼機構、認證（CE／UL／FCC）、量產測試治具。</p>
+      <p><b>不含 MIPI</b>　面板 MIPI 訊號走核心板底邊 FPC（J6／J7），本板只送 bias（J1 pad 19–26）。</p>
+      <p><b>不含 USB 通訊協定</b>　協定由 Racer 提供規格（見 §7.3），本板只是實體直通。</p>
+    </div>
+  </div>
+
+  <h3><span class="num">1.1</span>西柏承接的工作項目</h3>
+  <div class="tw"><table>
+    <thead><tr><th style="width:170px">階段</th><th>內容</th><th style="width:130px">依據</th></tr></thead>
+    <tbody>
+      <tr><td>原理圖設計</td><td>依本文件規格重繪；輸入級改單一接頭，其餘沿用 v1.1 架構</td><td>§3 §4 §5</td></tr>
+      <tr><td>PCB Layout</td><td>4-layer、板尺寸約 165 × 120 mm、POL 就近 J1、HV 隔離、散熱銅</td><td>§3 §6</td></tr>
+      <tr><td>BOM</td><td>依 §4 選型；長料（TPS54360／TPS65131／Micro-Fit）建議提前下單</td><td>§4</td></tr>
+      <tr><td>打樣 ＋ SMT</td><td>Proto 10 pcs</td><td>—</td></tr>
+      <tr><td>Bring-up ／ 驗證</td><td>九軌電壓、上下電時序、inrush、面板 bias、熱</td><td>§3 §5</td></tr>
+      <tr><td>文件</td><td>Schematic、Layout、BOM、測試報告</td><td>§12</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s2">
+  <h2><span class="num">2</span>設計變更說明</h2>
+  <p class="h2n">本專案的電源輸入規格在三週內改過五次，最後一次在 07-05。接手時只需依最終版，但了解演進有助於判讀既有檔案。</p>
+
+  <div class="tw"><table>
+    <thead><tr><th style="width:110px">日期</th><th style="width:230px">版本／來源</th><th>電源輸入規格</th></tr></thead>
+    <tbody>
+      <tr><td class="n">2026-06-12</td><td>Spec v0.2</td><td>12 V / 2 A 單一電壓</td></tr>
+      <tr><td class="n">2026-06-19</td><td>USB ICD</td><td>12 V / 2 A，DC barrel jack 5.5×2.1 mm</td></tr>
+      <tr><td class="n">2026-06-22</td><td>Proposal v1.0</td><td>改為單一 24 V / 4 A</td></tr>
+      <tr><td class="n">2026-06-23</td><td>Ray 回覆</td><td>12 V 與 24 V 都要，且須相容多種尺寸 LCD</td></tr>
+      <tr><td class="n">2026-07-02</td><td>客戶確認</td><td>寬輸入 12–24 V</td></tr>
+      <tr><td class="n">2026-07-03</td><td>Spec v2.0／Proposal v1.1<br><span class="tag t-ref">已失效</span></td><td>一片板 12–24 V，<b>雙輸入接頭</b>（24 V 螺絲端子 ＋ 12 V Micro-Fit）＋ OR-ing 防互灌</td></tr>
+      <tr style="background:var(--ok-w)"><td class="n"><b>2026-07-05</b></td><td><b>Ray 拍板</b><br><span class="tag t-fix">現行目標</span></td><td><b>單一電源輸入</b>：板端 Molex <code>43650-0200</code>（Micro-Fit 3.0 直角 header）。24 V 螺絲端子取消，OR-ing（U19／U20 LM74700）＋ FET <b>整組刪除</b>。寬輸入 12–24 V 電氣不變</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note ok">
+    <div class="note-h">這次變更讓設計變簡單，不是變複雜</div>
+    <p>單入口沒有互灌問題，因此可以刪掉兩顆理想二極體控制器與對應 FET。<b>保留</b>：反接 P-FET（Vds ≥ 30 V）、TVS SMBJ30A、soft-start、共模扼流圈。輸入電壓範圍、後級所有 POL 與 bias 電路<b>完全不受影響</b>。</p>
+  </div>
+
+  <h3><span class="num">2.1</span>07-05 同時拍板的其他三項</h3>
+  <div class="grid g3">
+    <div class="card"><div class="card-l">操作溫度</div><h4>商規 0–70 °C</h4><p>全系統依商規設計，<b>不必補回工業溫度段</b>。詳見 §8.2。</p></div>
+    <div class="card"><div class="card-l">面板清單</div><h4>定為三種</h4><p>7.1″ 8K（群創 InnoLux）、10″ 16K、13.5″ 16K。<span class="tag t-open">待補</span> 各尺寸 bias 電壓與 source-driver 電流。</p></div>
+    <div class="card"><div class="card-l">對接線</div><h4>樣品階段附兩條</h4><p>每片板隨附 2 條：<code>43645-0200</code> ＋ <code>43030</code> 端子、22 AWG、300 mm，另一端裸線上錫。量產線束由使用方自定義。</p></div>
+  </div>
+</section>
+
+<section id="s3">
+  <h2><span class="num">3</span>電源架構與需求</h2>
+  <p class="h2n">以下為<b>目標設計（單一輸入版）</b>，為實作依據。</p>
+
+
+  <div class="sheet">
+    <div class="figtitle">圖 3-1　電源樹 — 目標設計（單一輸入版）</div>
+    <p class="fignote">左到右五段：單一電源輸入 → 保護鏈 → 前級降壓 → 六條 POL ＋ 三條面板 bias → 經 J1（30 pad）送核心板。此圖已反映 07-05 變更，<b>為實作依據</b>。</p>
+    <svg viewBox="0 0 1210 540" role="img" aria-label="單一輸入版供電板電源樹方塊圖">
+      <text class="lbl" x="85"  y="22" text-anchor="middle">輸入</text>
+      <text class="lbl" x="300" y="22" text-anchor="middle">保護鏈</text>
+      <text class="lbl" x="530" y="22" text-anchor="middle">前級降壓</text>
+      <text class="lbl" x="750" y="22" text-anchor="middle">POL ／ 面板 bias</text>
+      <text class="lbl" x="1115" y="22" text-anchor="middle">送核心板</text>
+      <line class="w" x1="20" y1="30" x2="1190" y2="30" stroke-dasharray="3 3"/>
+
+      <rect class="conn" x="20" y="86" width="140" height="58" rx="5"/>
+      <text class="lbl" x="30" y="106">J15　唯一輸入</text>
+      <text class="ref" x="30" y="121">Molex 43650-0200</text>
+      <text class="ref" x="30" y="134">Micro-Fit 3.0 · 2-ckt · R/A</text>
+      <text class="val" x="30" y="78">12 – 24 V DC</text>
+      <line class="w" x1="160" y1="115" x2="190" y2="115"/>
+
+      <rect class="pas" x="190" y="72" width="225" height="86" rx="5"/>
+      <text class="lbl" x="200" y="90">保護鏈</text>
+      <text class="ref" x="200" y="106">F1　fuse 2–3 A</text>
+      <text class="ref" x="200" y="120">Q1　反接 P-FET（Vds ≥ 30 V）</text>
+      <text class="ref" x="200" y="134">D1　TVS SMBJ30A</text>
+      <text class="ref" x="200" y="148">CM1　共模扼流圈 ＋ 200R</text>
+      <line class="w" x1="415" y1="115" x2="450" y2="115"/>
+      <text class="net" x="418" y="109">VIN_PROT</text>
+
+      <rect class="ic" x="450" y="82" width="150" height="66" rx="5"/>
+      <text class="lbl" x="460" y="101">U10</text>
+      <text class="ref" x="460" y="115">TPS54360 sync buck</text>
+      <text class="val" x="460" y="131">12–24 V → 5 V　3.5 A</text>
+      <text class="ref" x="460" y="143">C13 soft-start · inrush &lt; 3.5 A</text>
+
+      <line class="wp" x1="600" y1="115" x2="625" y2="115"/>
+      <line class="wp" x1="625" y1="58" x2="625" y2="400"/>
+      <text class="netp" x="632" y="54">VBUS_5V</text>
+
+    <rect class="ic" x="660" y="40" width="185" height="36" rx="4"/>
+    <text class="lbl" x="670" y="55">VCC_5V tap</text><text class="ref" x="670" y="68">U10 5V 直取</text>
+    <text class="val" x="835" y="55" text-anchor="end">5.0 V / 30 mA</text>
+    <text class="ref" x="835" y="68" text-anchor="end">J1-1,2</text>
+    <line class="w" x1="625" y1="58" x2="660" y2="58"/>
+    <line class="w" x1="845" y1="58" x2="1040" y2="58"/>
+    <rect class="ic" x="660" y="84" width="185" height="36" rx="4"/>
+    <text class="lbl" x="670" y="99">U11</text><text class="ref" x="670" y="112">MP2143</text>
+    <text class="val" x="835" y="99" text-anchor="end">1.8 V ≥3 A</text>
+    <text class="ref" x="835" y="112" text-anchor="end">J1-7,8</text>
+    <line class="w" x1="625" y1="102" x2="660" y2="102"/>
+    <line class="w" x1="845" y1="102" x2="1040" y2="102"/>
+    <rect class="ic" x="660" y="128" width="185" height="36" rx="4"/>
+    <text class="lbl" x="670" y="143">U12</text><text class="ref" x="670" y="156">TPS62082</text>
+    <text class="val" x="835" y="143" text-anchor="end">3.3 V / 1.2 A</text>
+    <text class="ref" x="835" y="156" text-anchor="end">J1-4,5</text>
+    <line class="w" x1="625" y1="146" x2="660" y2="146"/>
+    <line class="w" x1="845" y1="146" x2="1040" y2="146"/>
+    <rect class="ic" x="660" y="172" width="185" height="36" rx="4"/>
+    <text class="lbl" x="670" y="187">U13</text><text class="ref" x="670" y="200">MP2161</text>
+    <text class="val" x="835" y="187" text-anchor="end">0.85 V / 1.5 A</text>
+    <text class="ref" x="835" y="200" text-anchor="end">J1-16,17</text>
+    <line class="w" x1="625" y1="190" x2="660" y2="190"/>
+    <line class="w" x1="845" y1="190" x2="1040" y2="190"/>
+    <rect class="ic" x="660" y="216" width="185" height="36" rx="4"/>
+    <text class="lbl" x="670" y="231">U14</text><text class="ref" x="670" y="244">TPS62811</text>
+    <text class="val" x="835" y="231" text-anchor="end">1.1 V / 1 A</text>
+    <text class="ref" x="835" y="244" text-anchor="end">J1-13,14</text>
+    <line class="w" x1="625" y1="234" x2="660" y2="234"/>
+    <line class="w" x1="845" y1="234" x2="1040" y2="234"/>
+    <rect class="ic" x="660" y="260" width="185" height="36" rx="4"/>
+    <text class="lbl" x="670" y="275">U15</text><text class="ref" x="670" y="288">TPS62811</text>
+    <text class="val" x="835" y="275" text-anchor="end">1.2 V / 1 A</text>
+    <text class="ref" x="835" y="288" text-anchor="end">J1-10,11</text>
+    <line class="w" x1="625" y1="278" x2="660" y2="278"/>
+    <line class="w" x1="845" y1="278" x2="1040" y2="278"/>
+
+      <line class="wp" x1="625" y1="378" x2="660" y2="378"/>
+      <rect class="ic" x="660" y="350" width="185" height="56" rx="5"/>
+      <text class="lbl" x="670" y="368">U16</text>
+      <text class="ref" x="670" y="382">TPS65131 dual ± TFT bias</text>
+      <text class="val" x="670" y="397">±6.2 V ＋ 1.8 V</text>
+
+    <rect class="ic" x="880" y="330" width="150" height="38" rx="4"/>
+    <text class="lbl" x="890" y="346">U17A</text><text class="ref" x="890" y="359">TPS22965</text>
+    <text class="val" x="1020" y="346" text-anchor="end">PVCC_1V8</text>
+    <text class="ref" x="1020" y="359" text-anchor="end">J1-19,20</text>
+    <line class="w" x1="845" y1="349" x2="880" y2="349"/>
+    <line class="w" x1="1030" y1="349" x2="1040" y2="349"/>
+    <rect class="ic" x="880" y="378" width="150" height="38" rx="4"/>
+    <text class="lbl" x="890" y="394">U17B</text><text class="ref" x="890" y="407">TPS22965</text>
+    <text class="val" x="1020" y="394" text-anchor="end">PAVDD +6.2V</text>
+    <text class="ref" x="1020" y="407" text-anchor="end">J1-22,23</text>
+    <line class="w" x1="845" y1="397" x2="880" y2="397"/>
+    <line class="w" x1="1030" y1="397" x2="1040" y2="397"/>
+    <rect class="ic" x="880" y="426" width="150" height="38" rx="4"/>
+    <text class="lbl" x="890" y="442">U17C</text><text class="ref" x="890" y="455">TPS22965</text>
+    <text class="val" x="1020" y="442" text-anchor="end">PAVEE −6.2V</text>
+    <text class="ref" x="1020" y="455" text-anchor="end">J1-25,26</text>
+    <line class="w" x1="845" y1="445" x2="880" y2="445"/>
+    <line class="w" x1="1030" y1="445" x2="1040" y2="445"/>
+
+      <rect class="conn" x="1040" y="40" width="150" height="456" rx="5"/>
+      <text class="lbl" x="1115" y="240" text-anchor="middle">J1</text>
+      <text class="ref" x="1115" y="256" text-anchor="middle">Power Inlet</text>
+      <text class="ref" x="1115" y="269" text-anchor="middle">30 pads · 2.0 mm</text>
+      <text class="ref" x="1115" y="282" text-anchor="middle">castellated</text>
+
+      <rect class="pas" x="190" y="400" width="400" height="96" rx="5"/>
+      <text class="lbl" x="200" y="419">U18　TPS386596　supervisor／sequencer</text>
+      <text class="ref" x="200" y="436">開機：VDDIO(1.8V) → AVDD(+6.2) → AVEE(−6.2)　T2=200 / T8=120 ms</text>
+      <text class="ref" x="200" y="452">關斷／0xA7 放電：AVEE → AVDD → VDDIO　T9=150 / T14=100 ms</text>
+      <text class="ref" x="200" y="468">FPGA：0.85 V 先於 VCCO／1.8 V；PG gating 後才放 PS_POR</text>
+      <text class="ref" x="200" y="484" fill="#0F766E">→ 控制 U11–U15 的 EN 與 U17A/B/C load switch</text>
+      <line class="w" x1="590" y1="448" x2="625" y2="448" stroke-dasharray="4 3"/>
+      <line class="w" x1="625" y1="448" x2="625" y2="406" stroke-dasharray="4 3"/>
+    </svg>
+  </div>
+
+
+  <h3><span class="num">3.1</span>FPGA 核心板 logic rails（經 J1）</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Rail（net）</th><th class="n">電壓</th><th class="n">最大電流</th><th class="n">J1 pads</th><th>功能</th><th style="width:160px">建議元件</th></tr></thead>
+    <tbody>
+      <tr><td><code>VCC_0V85</code></td><td class="n">0.85 V</td><td class="n">571 mA</td><td class="n">16, 17</td><td>PS／PL core（VCCINT）</td><td>MP2161（1.5 A）</td></tr>
+      <tr><td><code>VCC_1V1</code></td><td class="n">1.10 V</td><td class="n">584 mA</td><td class="n">13, 14</td><td>LPDDR4／PS（VCCO_PSDDR）</td><td>TPS62811（1 A）</td></tr>
+      <tr><td><code>VCC_1V2</code></td><td class="n">1.20 V</td><td class="n">230 mA</td><td class="n">10, 11</td><td>PS／PHY（VCC_PSPLL）</td><td>TPS62811（1 A）</td></tr>
+      <tr style="background:var(--warn-w)"><td><code>VCC_1V8</code></td><td class="n">1.80 V</td><td class="n"><b>1348 mA</b></td><td class="n">7, 8</td><td>I/O、VCCAUX、PS-GTR termination</td><td><b>MP2143（≥ 3 A）</b></td></tr>
+      <tr><td><code>VCC_3V3</code></td><td class="n">3.30 V</td><td class="n">410 mA</td><td class="n">4, 5</td><td>I/O／周邊</td><td>TPS62082（1.2 A）</td></tr>
+      <tr><td><code>VCC_5V</code></td><td class="n">5.0 V</td><td class="n">30 mA</td><td class="n">1, 2</td><td>USB-UART bridge</td><td>由 U10 5 V 直取</td></tr>
+    </tbody>
+    <tfoot><tr><td colspan="5">Logic 小計</td><td class="n">≈ 5.3 W</td></tr></tfoot>
+  </table></div>
+  <div class="note warn">
+    <div class="note-h">1.8 V 必須設計 ≥ 3 A —— 這不是餘裕，是必要</div>
+    <p>穩態 1348 mA 是板級值（含板上 PHY）；SoC 單獨 pin-sum 依 Core Board Datasheet v1.2 約 978 mA。但 <b>PS-GTR termination（<code>PS_MGTRAVTT</code>）動態可衝到 1–2 A</b>，且 VCCAUX／VCCAUX_IO 共用此軌。若按穩態值選 2 A 元件，GTR 活動時會掉壓。</p>
+  </div>
+
+  <h3><span class="num">3.2</span>面板 bias rails（經 J1）</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Rail（net）</th><th class="n">電壓</th><th class="n">最大電流</th><th class="n">J1 pads</th><th>面板腳位</th><th style="width:160px">建議元件</th></tr></thead>
+    <tbody>
+      <tr><td><code>PVCC_1V8</code></td><td class="n">+1.8 V</td><td class="n">125 mA</td><td class="n">19, 20</td><td>VDDIO</td><td>U16 → U17A 開關</td></tr>
+      <tr><td><code>PAVDD</code></td><td class="n">+6.2 V</td><td class="n">67 mA</td><td class="n">22, 23</td><td>AVDD</td><td>U16 → U17B 開關</td></tr>
+      <tr><td><code>PAVEE</code></td><td class="n">−6.2 V</td><td class="n">65 mA</td><td class="n">25, 26</td><td>AVEE</td><td>U16 → U17C 開關</td></tr>
+    </tbody>
+    <tfoot><tr><td colspan="5">面板 bias 小計</td><td class="n">≈ 1.0 W</td></tr></tfoot>
+  </table></div>
+  <p class="cap">Innolux <code>ZE096DA-01A</code>（9.55″）與 <code>ZE170DA-01A</code>（16.95″）在<b>所有電源參數上電氣完全相同</b>（電壓、電流、XDYT 51-pin FPC、開關序），差別僅在機構尺寸與 MIPI timing，因此同一組 bias 電路即可涵蓋。<span class="tag t-open">待補</span> 07-05 新定的三種面板（7.1″／10″／13.5″）各自的 source-driver 電流尚未取得，屆時須重算 bias 與 1.8 V 裕度——見 §11。</p>
+
+  <h3><span class="num">3.3</span>功耗預算</h3>
+  <div class="tw"><table>
+    <thead><tr><th>負載</th><th class="n">功率</th><th>備註</th></tr></thead>
+    <tbody>
+      <tr><td>FPGA 核心板 logic rails</td><td class="n">≈ 5.3 W</td><td>§3.1 六軌合計</td></tr>
+      <tr><td>面板 bias（PVCC_1V8 ＋ PAVDD ＋ PAVEE）</td><td class="n">≈ 1.0 W</td><td>§3.2</td></tr>
+      <tr><td>轉換損耗</td><td class="n">≈ 1.1 W</td><td>平均約 85% 效率</td></tr>
+      <tr><td>風扇 ＋ headroom</td><td class="n">≈ 1.5 W</td><td></td></tr>
+    </tbody>
+    <tfoot><tr><td>穩態合計（17″ 面板）</td><td class="n">≈ 8.9 W</td><td>12 V 下約 0.74 A</td></tr></tfoot>
+  </table></div>
+  <div class="note risk">
+    <div class="note-h">設計的限制不是穩態功率，是 inrush</div>
+    <p>穩態在客戶 12 V / 2 A（24 W）下有約 2.7 倍餘裕，客戶另有 12 V / 30 A 可用，因此穩態不是問題。<b>真正的限制是客戶線上的 3.5 A 保險絲</b>——soft-start 必須把開機湧浪壓在 3.5 A 以下，否則會在客戶端跳保險絲。Bring-up 階段此項須實測驗證。</p>
+  </div>
+</section>
+
+<section id="s4">
+  <h2><span class="num">4</span>輸入級與保護（單一輸入版）</h2>
+  <p class="h2n">目標設計。與 v1.1 參考圖 Sheet 1 的差異已於 §2 說明。</p>
+
+  <div class="tw"><table>
+    <thead><tr><th style="width:110px">位號</th><th style="width:210px">元件／規格</th><th>作用與選型理由</th><th style="width:100px">狀態</th></tr></thead>
+    <tbody>
+      <tr><td><code>J15</code></td><td>Molex <b>43650-0200</b><br>Micro-Fit 3.0 · 2-ckt · 直角 header</td><td><b>唯一電源輸入。</b>板端為直角 header；對接線端為 <code>43645-0200</code> ＋ <code>43030</code> 端子。對接 Stratasys 系統側 J5</td><td><span class="tag t-fix">已定案</span></td></tr>
+      <tr><td><code>F1</code></td><td>Fuse 2–3 A</td><td>過流保護</td><td><span class="tag t-fix">沿用</span></td></tr>
+      <tr><td><code>Q1</code></td><td>P-FET，<b>Vds ≥ 30 V</b></td><td>反接保護。因輸入上限 24 V，耐壓必須 ≥ 30 V</td><td><span class="tag t-fix">沿用</span></td></tr>
+      <tr style="background:var(--risk-w)"><td><code>D1</code></td><td>TVS <b>SMBJ30A</b><br>standoff 30 V</td><td><b>本設計與 Stratasys 參考圖唯一的關鍵偏離。</b>客戶參考圖用 SMBJ14A-Q（standoff 14 V），只適用 12 V；本板須支援到 24 V，<b>14 V TVS 會在 24 V 下持續導通</b>。必須改用 SMBJ30A</td><td><span class="tag t-chg">必須偏離</span></td></tr>
+      <tr><td><code>CM1</code></td><td>共模扼流圈 ＋ 200 R ferrite</td><td>傳導 EMI 與地雜訊控制。實作跨 V+ 與 return 兩線</td><td><span class="tag t-fix">沿用</span></td></tr>
+      <tr><td><code>C13</code></td><td>soft-start 電容<br>（掛於 U10.SS）</td><td>壓制開機湧浪 &lt; 3.5 A，配合客戶線上 3.5 A fuse</td><td><span class="tag t-fix">沿用</span></td></tr>
+      <tr style="background:var(--sunk)"><td><code>J10</code></td><td>Würth WR-TBL 2-pos 螺絲端子</td><td>原 24 V（Phrozen）輸入</td><td><span class="tag t-open">07-05 刪除</span></td></tr>
+      <tr style="background:var(--sunk)"><td><code>U19 / U20</code></td><td>LM74700 理想二極體 ＋ FET</td><td>原 OR-ing 防互灌。單一輸入後無互灌可能</td><td><span class="tag t-open">07-05 刪除</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3><span class="num">4.1</span>前級降壓</h3>
+  <div class="tw"><table>
+    <thead><tr><th style="width:110px">位號</th><th style="width:210px">元件</th><th>規格</th></tr></thead>
+    <tbody>
+      <tr><td><code>U10</code></td><td>TI <b>TPS54360</b> 同步降壓</td><td>輸入 4.5–60 V（涵蓋 12–24 V 綽綽有餘）、輸出 5 V / 3.5 A。產生全板 <code>VBUS_5V</code> bus</td></tr>
+    </tbody>
+  </table></div>
+  <p class="cap">寬輸入架構在第一版 IOB v1.1 上已用 TI LM5175（42 V buck-boost）量產驗證過。本板因僅需降壓（12–24 V → 5 V），改用 TPS54360 純 buck 即可，成本與複雜度都較低。</p>
+</section>
+
+<section id="s5">
+  <h2><span class="num">5</span>電源時序</h2>
+  <p class="h2n">由 <code>U18 TPS386596</code> supervisor／sequencer 統一控制。時序錯誤會導致 FPGA 無法開機或面板殘影。</p>
+
+  <div class="grid g2">
+    <div class="card" style="border-left:3px solid var(--blue)">
+      <div class="card-l">FPGA 側</div>
+      <p>Zynq UltraScale+ 規定：<b><code>0.85 V</code> core rails 必須早於 <code>VCCO</code> ／ <code>1.8 V</code></b>。</p>
+      <p>Supervisor 需執行 sequencing ＋ <b>power-good gating</b>，全部軌 PG 成立後才釋放 <code>PS_POR</code>。</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--blue)">
+      <div class="card-l">面板側</div>
+      <p><b>開機序：</b><code>VDDIO (1.8 V)</code> → <code>AVDD (+6.2 V)</code> → <code>AVEE (−6.2 V)</code><br>T2 = 200 ms，T8 = 120 ms</p>
+      <p><b>關斷／放電序（反向）：</b><code>AVEE</code> → <code>AVDD</code> → <code>VDDIO</code><br>T9 = 150 ms，T14 = 100 ms</p>
+      <p>面板 ±6.2 V 只在所有 logic rails 穩定後才致能。</p>
+    </div>
+  </div>
+
+  <div class="note">
+    <div class="note-h">與 USB 協定的唯一交集：<code>0xA7</code> 硬體重置</div>
+    <p>USB 通訊協定的 <code>0xA7</code> 指令包含「LCD panel discharge」動作。因此<b>三顆面板 load switch（U17A/B/C）與 sequencer 必須支援受控降壓</b>（<code>AVEE → AVDD → VDDIO</code>），使重置乾淨。除此之外，通訊協定與本板無關。</p>
+    <p>另有 <code>SW1</code> 手動開關，可獨立切斷面板高壓 bias，供 UV mask LCD 安全維修使用。</p>
+  </div>
+</section>
+
+<section id="s6">
+  <h2><span class="num">6</span>J1 Power-Inlet Pad Map</h2>
+  <p class="h2n">30 pads，castellated，2.0 mm pitch，位於核心板右緣。<b>此定義不可更動</b>——由核心板決定。</p>
+
+  <div class="tw"><table>
+    <thead><tr><th class="n" style="width:110px">Pad</th><th>Net</th><th class="n" style="width:110px">Pad</th><th>Net</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1, 2</td><td><code>VCC_5V</code></td><td class="n">16, 17</td><td><code>VCC_0V85</code></td></tr>
+      <tr><td class="n">4, 5</td><td><code>VCC_3V3</code></td><td class="n">19, 20</td><td><code>PVCC_1V8</code></td></tr>
+      <tr><td class="n">7, 8</td><td><code>VCC_1V8</code></td><td class="n">22, 23</td><td><code>PAVDD</code> +6.2 V</td></tr>
+      <tr><td class="n">10, 11</td><td><code>VCC_1V2</code></td><td class="n">25, 26</td><td><code>PAVEE</code> −6.2 V</td></tr>
+      <tr><td class="n">13, 14</td><td><code>VCC_1V1</code></td><td class="n">3, 6, 9, 12, 15,<br>18, 21, 24, 27–30</td><td><b>GND</b>（12 returns）</td></tr>
+    </tbody>
+  </table></div>
+  <p class="cap">每條電源軌配置兩個相鄰 pad、其後緊接一個 GND pad，形成 power／return 交錯。Layout 時應讓各 POL 輸出<b>就近 J1</b>，縮短高電流路徑。</p>
+</section>
+
+<section id="s7">
+  <h2><span class="num">7</span>連接器與對外介面</h2>
+
+  <h3><span class="num">7.1</span>對外接頭一覽</h3>
+  <div class="tw"><table>
+    <thead><tr><th style="width:110px">位號</th><th style="width:190px">介面</th><th>定義</th></tr></thead>
+    <tbody>
+      <tr><td><code>J15</code></td><td>電源輸入</td><td>Molex 43650-0200（Micro-Fit 3.0 · 2-ckt · 直角 header），12–24 V</td></tr>
+      <tr><td><code>J1</code></td><td>Power Inlet → 核心板</td><td>30 pads，castellated，2.0 mm pitch。見 §6</td></tr>
+      <tr><td><code>J3</code></td><td>核心板左側介面</td><td>pad 4, 5 ＝ <code>DP</code>／<code>DN</code>（USB 2.0）；pad 1, 2 ＝ UART1 TX／RX。<b>pad 10–17 為 PS-GTR，本案未用</b></td></tr>
+      <tr><td><code>J2</code></td><td>核心板頂側介面</td><td>pad 36–41 ＝ MIO（3V3）；pad 7, 8 ＝ Ethernet LED</td></tr>
+      <tr><td><code>J11</code></td><td>USB 2.0 Device</td><td>VBUS(sense)·D+·D−·GND</td></tr>
+      <tr><td><code>J12</code></td><td>UART1</td><td>TX·RX·GND·3V3</td></tr>
+      <tr><td><code>J13</code></td><td>Debug header</td><td>SWD（1, 2 ＝ SWCLK／SWDIO）·UART0（29, 30 ＝ RX／TX）·I²C1（27, 28 ＝ SDA／SCL）·RST</td></tr>
+      <tr><td><code>J14</code></td><td>風扇（PWM）</td><td><b>需獨立穩壓軌／PWM buck，勿直接吃 Vin</b></td></tr>
+      <tr><td><code>JP1</code></td><td>面板選擇跳線</td><td>1-2 ＝ 9.55″；2-3 ＝ 17″ → <code>PANEL_ID</code> 給 PS GPIO</td></tr>
+      <tr><td><code>SW1</code></td><td>手動面板 HV 切斷</td><td>維修用</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3><span class="num">7.2</span>USB 實體介面（已與客戶簽核）</h3>
+  <div class="note ok">
+    <div class="note-h">五項已簽核確認</div>
+    <p><b>①</b> FPGA ＝ USB <b>Device</b>、Raspberry Pi ＝ Host　<b>②</b> 對外 USB 接頭位於本板，訊號由核心板引出　<b>③</b> 核心板所有電源由本板提供；Pi 與 FPGA 之間的 USB 線<b>僅傳資料不供電</b>　<b>④</b> 電源接頭與 USB 接頭為兩個獨立連接器　<b>⑤</b> 兩板共地，透過 USB cable GND 建立</p>
+  </div>
+  <div class="note risk">
+    <div class="note-h">兩處重要更正 —— 舊文件有誤，請以此為準</div>
+    <p><b>① D+／D− 對應 pad：</b>舊 ICD 回覆寫「J3-10 ＝ D+、J3-11 ＝ D−」<b>是錯的</b>。以核心板第 5 頁 pad define 為準，正確為 <code>J3-4 (DP)</code>／<code>J3-5 (DN)</code>。J3-10／11 是 <code>TXRXA_P/N</code>，屬 PS-GTR 高速差動對，與 USB 2.0 無關。</p>
+    <p><b>② 舊 demo 板絲印：</b>IOB v2.0（2026-01-30）上的 <code>J30</code>／<code>J32</code> 是 Type-A（Host 母座），為早期 demo 配置，<b>不適用 Device 模式</b>。一律以 Mini-USB Type-B（J8）為準。</p>
+    <p><b>VBUS：</b>Device 模式下 5 V VBUS 由 Host 供應，<b>本板僅作 VBUS 偵測，不得對外 source 5 V</b>。（§3.1 的 5 V / 30 mA 是供板內 USB-UART bridge 用，不是供 VBUS。）</p>
+  </div>
+
+  <h3><span class="num">7.3</span>USB 通訊協定（非本板範圍）</h3>
+  <p>協定層由 Racer 提供規格文件《USB Communication Protocol Specification》（USB 2.0 High-Speed、Bulk EP_OUT <code>0x01</code>、FIFO 10 slots、checksum、異常矩陣、Black Box 暫存器 <code>0x80040000</code>）。<b>本板只是實體直通，唯一交集是 §5 所述的 <code>0xA7</code> 受控放電。</b></p>
+</section>
+
+<section id="s8">
+  <h2><span class="num">8</span>接地、EMC 與操作溫度</h2>
+
+  <h3><span class="num">8.1</span>接地與 EMC</h3>
+  <div class="tw"><table>
+    <thead><tr><th style="width:200px">項目</th><th>要求</th></tr></thead>
+    <tbody>
+      <tr><td>系統參考地</td><td>＝ 客戶 12 V 電源地</td></tr>
+      <tr><td>USB GND</td><td><b>僅作訊號參考，不是電源回流路徑</b></td></tr>
+      <tr><td>接地方式</td><td>單點接地（single-point grounding）</td></tr>
+      <tr><td>USB shield</td><td>依標準處理（機殼／框架接點）</td></tr>
+      <tr><td>ESD</td><td>USB 差動對上需加 ESD 保護</td></tr>
+      <tr><td>傳導 EMI</td><td>電源輸入加共模扼流圈（CM1）</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3><span class="num">8.2</span>操作溫度</h3>
+  <div class="note warn">
+    <div class="note-h">全系統 0 ~ +70 °C（商規）—— 已於 07-05 定案</div>
+    <p>核心板本身為 0 ~ +85 °C（Zynq E-grade），但<b>全系統上限由光固化 mask LCD 決定</b>：該面板於 UV 列印時須 ≤ 50 °C，且無工業級版本。因此即使把核心板換成工業級，全系統仍卡在 0 ~ 70 °C。</p>
+    <p>工業級（−40 ~ +85 °C）僅能做到核心板層級（Zynq 改 I-grade、工業 eMMC、工業振盪器）。<b>本案不走此路徑</b>，依商規設計即可。</p>
+  </div>
+</section>
+
+<section id="s9">
+  <h2><span class="num">9</span>參考電路圖（v1.1）</h2>
+  <p class="h2n">Racer 於 2026-07-03 繪製的概念電路圖，共四張 sheet。作為架構參考，非最終 layout。</p>
+
+  <div class="note risk">
+    <div class="note-h">Sheet 1 已過期，其餘三張仍有效</div>
+    <p>Sheet 1 畫的是<b>雙輸入 ＋ OR-ing</b>，該架構於 07-05 取消。實作請依 <b>§4 單一輸入規格</b>。Sheet 2／3／4 的 POL、面板 bias、連接器定義<b>不受此變更影響，可直接沿用</b>。</p>
+  </div>
+
+  <div class="sheet">
+    <div class="figtitle">參考圖 Sheet 1　輸入保護（雙輸入版 — 已過期）</div>
+    <svg viewBox="0 0 1120 380" role="img" aria-label="Sheet 1 input protection wired">
+    <!-- ===================== 24V input (Phrozen) ===================== -->
+    <rect class="conn" x="24" y="58" width="92" height="50" rx="5"/>
+    <text class="lbl" x="70" y="78" text-anchor="middle">J10</text>
+    <text class="ref" x="70" y="91" text-anchor="middle">24V Phrozen</text>
+    <text class="ref" x="70" y="103" text-anchor="middle">WR-TBL 2P</text>
+    <text class="ref" x="120" y="76">1</text><text class="ref" x="120" y="100">2</text>
+    <line class="w" x1="116" y1="72" x2="186" y2="72"/>
+    <!-- U19 ideal-diode OR-ing -->
+    <rect class="ic" x="186" y="56" width="90" height="38" rx="5"/>
+    <text class="lbl" x="231" y="72" text-anchor="middle">U19</text>
+    <text class="ref" x="231" y="85" text-anchor="middle">ideal-diode</text>
+    <text class="ref" x="182" y="52">IN</text><text class="ref" x="262" y="52">OUT</text>
+    <line class="w" x1="276" y1="72" x2="360" y2="72"/>
+    <!-- J10 pin2 -> GND -->
+    <line class="w" x1="116" y1="96" x2="150" y2="96"/>
+    <line class="gnd" x1="150" y1="96" x2="150" y2="106"/><line class="gnd" x1="141" y1="106" x2="159" y2="106"/><line class="gnd" x1="144" y1="110" x2="156" y2="110"/><line class="gnd" x1="147" y1="114" x2="153" y2="114"/>
+
+    <!-- ===================== 12V input (Stratasys) ===================== -->
+    <rect class="conn" x="24" y="196" width="92" height="50" rx="5"/>
+    <text class="lbl" x="70" y="216" text-anchor="middle">J15</text>
+    <text class="ref" x="70" y="229" text-anchor="middle">12V Stratasys</text>
+    <text class="val" x="70" y="241" text-anchor="middle">Micro-Fit PN▢</text>
+    <text class="ref" x="120" y="214">1</text><text class="ref" x="120" y="238">2</text>
+    <line class="w" x1="116" y1="210" x2="186" y2="210"/>
+    <rect class="ic" x="186" y="194" width="90" height="38" rx="5"/>
+    <text class="lbl" x="231" y="210" text-anchor="middle">U20</text>
+    <text class="ref" x="231" y="223" text-anchor="middle">ideal-diode</text>
+    <line class="w" x1="276" y1="210" x2="360" y2="210"/>
+    <line class="w" x1="116" y1="234" x2="150" y2="234"/>
+    <line class="gnd" x1="150" y1="234" x2="150" y2="244"/><line class="gnd" x1="141" y1="244" x2="159" y2="244"/><line class="gnd" x1="144" y1="248" x2="156" y2="248"/><line class="gnd" x1="147" y1="252" x2="153" y2="252"/>
+
+    <!-- ===================== merge -> VIN bus ===================== -->
+    <line class="wr" x1="360" y1="72" x2="360" y2="210"/>
+    <circle cx="360" cy="72" r="3.2" fill="#b91c1c"/><circle cx="360" cy="210" r="3.2" fill="#b91c1c"/>
+    <text class="net" x="366" y="62">VIN 12–24V</text>
+    <circle cx="360" cy="141" r="3.2" fill="#b91c1c"/>
+    <line class="wr" x1="360" y1="141" x2="404" y2="141"/>
+
+    <!-- F1 fuse -->
+    <rect class="pas" x="404" y="129" width="50" height="24" rx="2"/>
+    <line class="w" x1="411" y1="141" x2="447" y2="141"/>
+    <text class="lbl" x="429" y="123" text-anchor="middle">F1</text>
+    <text class="val" x="429" y="169" text-anchor="middle">2–3A</text>
+    <line class="wr" x1="454" y1="141" x2="500" y2="141"/>
+    <!-- C2 ceramic to GND -->
+    <circle cx="478" cy="141" r="3" fill="#b91c1c"/>
+    <line class="w" x1="478" y1="141" x2="478" y2="182"/>
+    <line class="pas" x1="470" y1="182" x2="486" y2="182"/><line class="pas" x1="470" y1="188" x2="486" y2="188"/>
+    <text class="ref" x="490" y="188">C2 0.1µ</text>
+    <line class="gnd" x1="478" y1="188" x2="478" y2="198"/><line class="gnd" x1="469" y1="198" x2="487" y2="198"/><line class="gnd" x1="472" y1="202" x2="484" y2="202"/><line class="gnd" x1="475" y1="206" x2="481" y2="206"/>
+
+    <!-- Q1 reverse-polarity P-FET (symbol: box + S/G/D pins) -->
+    <rect class="pas" x="500" y="120" width="60" height="42" rx="4"/>
+    <text class="lbl" x="530" y="136" text-anchor="middle">Q1</text>
+    <text class="ref" x="530" y="149" text-anchor="middle">P-FET</text>
+    <text class="ref" x="503" y="118">S</text><text class="ref" x="551" y="118">D</text><text class="ref" x="526" y="176">G</text>
+    <line class="wr" x1="500" y1="141" x2="500" y2="141"/>
+    <line class="w" x1="490" y1="141" x2="500" y2="141"/>
+    <line class="wr" x1="560" y1="141" x2="620" y2="141"/>
+    <!-- gate network G->R1->GND, D2 zener clamp -->
+    <line class="w" x1="530" y1="162" x2="530" y2="188"/>
+    <line class="pas" x1="522" y1="188" x2="538" y2="196"/><text class="ref" x="516" y="196">R1</text>
+    <line class="w" x1="530" y1="200" x2="530" y2="210"/>
+    <line class="gnd" x1="530" y1="210" x2="530" y2="220"/><line class="gnd" x1="521" y1="220" x2="539" y2="220"/><line class="gnd" x1="524" y1="224" x2="536" y2="224"/><line class="gnd" x1="527" y1="228" x2="533" y2="228"/>
+
+    <text class="net" x="566" y="131">VIN_PROT</text>
+    <circle cx="620" cy="141" r="3.2" fill="#b91c1c"/>
+
+    <!-- C1 bulk electrolytic to GND -->
+    <line class="w" x1="620" y1="141" x2="620" y2="182"/>
+    <line class="pas" x1="610" y1="182" x2="630" y2="182"/>
+    <path class="pas" d="M610,190 q10,7 20,0"/>
+    <text class="ref" x="596" y="200">C1 100µ</text>
+    <line class="gnd" x1="620" y1="192" x2="620" y2="202"/><line class="gnd" x1="611" y1="202" x2="629" y2="202"/><line class="gnd" x1="614" y1="206" x2="626" y2="206"/><line class="gnd" x1="617" y1="210" x2="623" y2="210"/>
+
+    <!-- CM1 common-mode choke (coupled coils on line) -->
+    <line class="wr" x1="620" y1="141" x2="648" y2="141"/>
+    <path class="w" d="M648,141 q7,-11 14,0 q7,-11 14,0 q7,-11 14,0 q7,-11 14,0"/>
+    <line class="w" x1="662" y1="150" x2="704" y2="150"/>  <!-- coupling bars -->
+    <text class="lbl" x="676" y="126" text-anchor="middle">CM1</text>
+    <text class="ref" x="676" y="167" text-anchor="middle">CM choke + 200R</text>
+    <line class="wr" x1="704" y1="141" x2="760" y2="141"/>
+    <text class="net" x="712" y="131">VIN_CLN</text>
+    <circle cx="740" cy="141" r="3.2" fill="#b91c1c"/>
+
+    <!-- D1 TVS to GND (Zener/TVS symbol) -->
+    <line class="w" x1="740" y1="141" x2="740" y2="176"/>
+    <polygon class="pas" points="730,176 750,176 740,190"/>
+    <path class="pas" d="M732,190 h16 M732,190 l-4,5 M748,190 l4,5"/>
+    <text class="lbl" x="756" y="184">D1</text><text class="val" x="756" y="196">SMBJ30A</text>
+    <line class="gnd" x1="740" y1="190" x2="740" y2="200"/><line class="gnd" x1="731" y1="200" x2="749" y2="200"/><line class="gnd" x1="734" y1="204" x2="746" y2="204"/><line class="gnd" x1="737" y1="208" x2="743" y2="208"/>
+
+    <!-- ===================== U10 buck ===================== -->
+    <line class="wr" x1="760" y1="141" x2="800" y2="141"/>
+    <rect class="ic" x="800" y="80" width="150" height="150" rx="6"/>
+    <text class="lbl" x="875" y="104" text-anchor="middle">U10 TPS54360</text>
+    <text class="ref" x="875" y="118" text-anchor="middle">12/24V → 5V buck</text>
+    <!-- pins -->
+    <text class="ref" x="804" y="146">VIN</text><line class="wr" x1="790" y1="141" x2="800" y2="141"/>
+    <text class="ref" x="804" y="172">EN</text><line class="w" x1="782" y1="167" x2="800" y2="167"/><text class="ref" x="742" y="171">EN div.</text>
+    <text class="ref" x="804" y="198">SS</text><line class="w" x1="800" y1="193" x2="782" y2="193"/>
+    <!-- C13 soft-start -->
+    <line class="w" x1="782" y1="193" x2="782" y2="210"/><line class="pas" x1="774" y1="210" x2="790" y2="210"/><line class="pas" x1="774" y1="214" x2="790" y2="214"/><text class="ref" x="744" y="207">C13 SS</text>
+    <line class="gnd" x1="782" y1="214" x2="782" y2="224"/><line class="gnd" x1="773" y1="224" x2="791" y2="224"/><line class="gnd" x1="776" y1="228" x2="788" y2="228"/>
+    <text class="ref" x="922" y="146" text-anchor="end">SW</text><line class="wr" x1="950" y1="141" x2="1010" y2="141"/><text class="net" x="962" y="131">SW10 → L10 (Sheet 2)</text>
+    <text class="ref" x="922" y="172" text-anchor="end">FB</text><line class="w" x1="950" y1="167" x2="978" y2="167"/><text class="ref" x="980" y="171">R10/R11</text>
+    <text class="ref" x="922" y="198" text-anchor="end">PG</text><line class="w" x1="950" y1="193" x2="988" y2="193"/><text class="ref" x="990" y="197">→ U18</text>
+    <text class="ref" x="875" y="224" text-anchor="middle">GND</text>
+    <line class="w" x1="875" y1="230" x2="875" y2="244"/><line class="gnd" x1="875" y1="244" x2="875" y2="254"/><line class="gnd" x1="866" y1="254" x2="884" y2="254"/><line class="gnd" x1="869" y1="258" x2="881" y2="258"/><line class="gnd" x1="872" y1="262" x2="878" y2="262"/>
+
+    <!-- notes -->
+    <text class="ref" x="30" y="300">※ U19/U20 = 理想二極體 OR-ing（各輸入一顆）→ 擋 24V 倒灌 12V；或規定「一次只接一個輸入」。</text>
+    <text class="ref" x="30" y="318">※ soft-start（C13 於 U10.SS）：開機 inrush &lt; 3.5A，配合客戶線上 3.5A fuse。</text>
+    <text class="ref" x="30" y="336">※ CM1 共模扼流圈畫於 V+ 線示意，實作跨 V+ 與 return 兩線；圖例：<tspan fill="#b91c1c" font-weight="700">紅=電源</tspan>、黑=訊號/GND、●=接點。</text>
+  </svg>
+    <div class="figcap">
+      <div class="figcap-b"><h5>這張在看什麼</h5><p>外部電源進板後、送到任何轉換器之前的那一段。目的只有兩個：擋掉接反與突波，把啟動電流壓在客戶保險絲以下。</p><div class="flow"><span class="off">J10 24V</span><i>＋</i><span>J15 12V</span><i>→</i><span class="off">OR-ing</span><i>→</i><span>F1</span><i>→</i><span>Q1 反接</span><i>→</i><span>D1 TVS</span><i>→</i><span>CM1</span><i>→</i><span class="hot">VIN_PROT</span></div><p style="color:var(--warn)"><b>注意</b>　<b>本張已過期。</b>圖中 J10、U19、U20 於 07-05 取消，實作請依 §4 單一輸入規格。保護鏈其餘元件不變。</p></div>
+      <div class="parts"><div class="tw"><table><thead><tr><th>位號</th><th>元件</th><th>作用</th></tr></thead><tbody><tr><td><code>J15</code></td><td>Molex Micro-Fit 2-ckt</td><td>12–24 V 輸入（改版後為唯一入口）</td></tr><tr><td><code>J10</code></td><td>Würth WR-TBL 2-pos</td><td>原 24 V 輸入 — <b>07-05 刪除</b></td></tr><tr><td><code>U19 / U20</code></td><td>LM74700 ＋ FET</td><td>原 OR-ing 防互灌 — <b>07-05 刪除</b></td></tr><tr><td><code>F1</code></td><td>fuse 2–3 A</td><td>過流</td></tr><tr><td><code>Q1</code></td><td>P-FET</td><td>反接保護，Vds ≥ 30 V</td></tr><tr><td><code>D1</code></td><td>TVS SMBJ30A</td><td>突波箝位。<b>不可用 SMBJ14A</b></td></tr><tr><td><code>CM1</code></td><td>共模扼流圈 ＋ 200R</td><td>傳導 EMI</td></tr><tr><td><code>C13</code></td><td>soft-start 電容</td><td>掛 U10.SS，壓 inrush &lt; 3.5 A</td></tr></tbody></table></div></div>
+    </div>
+  </div>
+  <div class="sheet">
+    <div class="figtitle">參考圖 Sheet 2　POL 電源軌 — 有效</div>
+    <svg viewBox="0 0 1120 360" role="img" aria-label="Sheet 2 POL rails">
+    <text class="net" x="20" y="40">VIN_PROT</text>
+    <line class="w" x1="20" y1="50" x2="70" y2="50"/>
+    <!-- U10 buck -->
+    <rect class="ic" x="70" y="30" width="140" height="70" rx="6"/>
+    <text class="lbl" x="140" y="55" text-anchor="middle">U10 TPS54360</text>
+    <text class="ref" x="140" y="70" text-anchor="middle">12/24V→5V sync buck</text>
+    <text class="val" x="140" y="84" text-anchor="middle">4.5–60V in · 3.5A · SS</text>
+    <line class="wr" x1="210" y1="55" x2="300" y2="55"/>
+    <text class="net" x="230" y="48">VBUS_5V</text>
+    <circle cx="300" cy="55" r="3" fill="#b91c1c"/>
+    <line class="wr" x1="300" y1="55" x2="300" y2="320"/>
+
+    <!-- 5V tap -->
+    <line class="wr" x1="300" y1="55" x2="360" y2="55"/>
+    <rect class="ic" x="360" y="38" width="150" height="34" rx="5"/>
+    <text class="lbl" x="435" y="53" text-anchor="middle">VCC_5V tap</text>
+    <text class="val" x="435" y="66" text-anchor="middle">5.0V / 30mA</text>
+    <line class="w" x1="510" y1="55" x2="600" y2="55"/><text class="net" x="600" y="52">VCC_5V → J1-1,2</text>
+
+    <!-- POLs -->
+    <g>
+      <!-- U11 1.8V -->
+      <line class="wr" x1="300" y1="100" x2="360" y2="100"/>
+      <rect class="ic" x="360" y="83" width="150" height="34" rx="5"/>
+      <text class="lbl" x="435" y="98" text-anchor="middle">U11 MP2143</text>
+      <text class="val" x="435" y="111" text-anchor="middle">→1.8V ≥3A</text>
+      <line class="w" x1="510" y1="100" x2="600" y2="100"/><text class="net" x="600" y="97">VCC_1V8 1348mA → J1-7,8</text>
+
+      <!-- U12 3.3V -->
+      <line class="wr" x1="300" y1="145" x2="360" y2="145"/>
+      <rect class="ic" x="360" y="128" width="150" height="34" rx="5"/>
+      <text class="lbl" x="435" y="143" text-anchor="middle">U12 TPS62082</text>
+      <text class="val" x="435" y="156" text-anchor="middle">→3.3V 1.2A</text>
+      <line class="w" x1="510" y1="145" x2="600" y2="145"/><text class="net" x="600" y="142">VCC_3V3 410mA → J1-4,5</text>
+
+      <!-- U13 0.85V -->
+      <line class="wr" x1="300" y1="190" x2="360" y2="190"/>
+      <rect class="ic" x="360" y="173" width="150" height="34" rx="5"/>
+      <text class="lbl" x="435" y="188" text-anchor="middle">U13 MP2161</text>
+      <text class="val" x="435" y="201" text-anchor="middle">→0.85V 1.5A</text>
+      <line class="w" x1="510" y1="190" x2="600" y2="190"/><text class="net" x="600" y="187">VCC_0V85 571mA → J1-16,17</text>
+
+      <!-- U14 1.1V -->
+      <line class="wr" x1="300" y1="235" x2="360" y2="235"/>
+      <rect class="ic" x="360" y="218" width="150" height="34" rx="5"/>
+      <text class="lbl" x="435" y="233" text-anchor="middle">U14 TPS62811</text>
+      <text class="val" x="435" y="246" text-anchor="middle">→1.1V 1A</text>
+      <line class="w" x1="510" y1="235" x2="600" y2="235"/><text class="net" x="600" y="232">VCC_1V1 584mA → J1-13,14</text>
+
+      <!-- U15 1.2V -->
+      <line class="wr" x1="300" y1="280" x2="360" y2="280"/>
+      <rect class="ic" x="360" y="263" width="150" height="34" rx="5"/>
+      <text class="lbl" x="435" y="278" text-anchor="middle">U15 TPS62811</text>
+      <text class="val" x="435" y="291" text-anchor="middle">→1.2V 1A</text>
+      <line class="w" x1="510" y1="280" x2="600" y2="280"/><text class="net" x="600" y="277">VCC_1V2 230mA → J1-10,11</text>
+    </g>
+
+    <!-- to bias sheet -->
+    <line class="wr" x1="300" y1="320" x2="820" y2="320"/>
+    <text class="net" x="822" y="317">VBUS_5V → Sheet 3 (U16 bias)</text>
+    <text class="ref" x="70" y="130">seq. by U18 (Sheet 3): 0.85V→其餘→1.8V，PG gating。</text>
+  </svg>
+    <div class="figcap">
+      <div class="figcap-b"><h5>這張在看什麼</h5><p>5 V bus 產生後如何分成六條邏輯電源軌。每條都對應核心板 J1 上固定的 pad，電流值取自 Core Board Datasheet v1.2。</p><div class="flow"><span class="hot">VIN_PROT</span><i>→</i><span>U10 TPS54360</span><i>→</i><span class="hot">VBUS_5V</span><i>→</i><span>U11–U15 ＋ 5V tap</span><i>→</i><span>J1</span></div><p style="color:var(--warn)"><b>注意</b>　1.8 V 設計成 ≥ 3 A 不是因為穩態需要（1348 mA），而是 PS-GTR termination 動態可衝到 1–2 A。此張<b>不受 07-05 變更影響，可直接沿用</b>。</p></div>
+      <div class="parts"><div class="tw"><table><thead><tr><th>位號</th><th>元件</th><th>作用</th></tr></thead><tbody><tr><td><code>U10</code></td><td>TPS54360</td><td>12/24 V → 5 V 同步降壓，輸入 4.5–60 V、3.5 A</td></tr><tr><td><code>U11</code></td><td>MP2143</td><td>1.8 V ≥ 3 A → J1-7,8</td></tr><tr><td><code>U12</code></td><td>TPS62082</td><td>3.3 V / 1.2 A → J1-4,5</td></tr><tr><td><code>U13</code></td><td>MP2161</td><td>0.85 V / 1.5 A → J1-16,17</td></tr><tr><td><code>U14</code></td><td>TPS62811</td><td>1.1 V / 1 A → J1-13,14</td></tr><tr><td><code>U15</code></td><td>TPS62811</td><td>1.2 V / 1 A → J1-10,11</td></tr></tbody></table></div></div>
+    </div>
+  </div>
+  <div class="sheet">
+    <div class="figtitle">參考圖 Sheet 3　面板 bias 與時序 — 有效</div>
+    <svg viewBox="0 0 1120 340" role="img" aria-label="Sheet 3 panel bias">
+    <text class="net" x="20" y="45">VBUS_5V</text><line class="wr" x1="20" y1="55" x2="70" y2="55"/>
+    <!-- U16 bias -->
+    <rect class="ic" x="70" y="30" width="150" height="90" rx="6"/>
+    <text class="lbl" x="145" y="52" text-anchor="middle">U16 TPS65131</text>
+    <text class="ref" x="145" y="66" text-anchor="middle">dual ± TFT bias</text>
+    <text class="val" x="145" y="82" text-anchor="middle">AVDD +6.2V</text>
+    <text class="val" x="145" y="96" text-anchor="middle">AVEE −6.2V</text>
+    <!-- 1V8 in for PVCC -->
+    <text class="net" x="20" y="112">VCC_1V8</text><line class="w" x1="20" y1="118" x2="70" y2="118"/>
+
+    <!-- load switches -->
+    <line class="w"  x1="220" y1="118" x2="290" y2="118"/>
+    <rect class="ic" x="290" y="40" width="150" height="34" rx="5"/>
+    <text class="lbl" x="365" y="55" text-anchor="middle">U17A TPS22965</text>
+    <text class="val" x="365" y="67" text-anchor="middle">PVCC_1V8 (VDDIO)</text>
+    <line class="netp" x1="220" y1="78"  x2="290" y2="78" stroke="#7c3aed" stroke-width="1.8"/>
+    <rect class="ic" x="290" y="88" width="150" height="34" rx="5"/>
+    <text class="lbl" x="365" y="103" text-anchor="middle">U17B TPS22965</text>
+    <text class="val" x="365" y="115" text-anchor="middle">PAVDD +6.2V</text>
+    <rect class="ic" x="290" y="136" width="150" height="34" rx="5"/>
+    <text class="lbl" x="365" y="151" text-anchor="middle">U17C TPS22965</text>
+    <text class="val" x="365" y="163" text-anchor="middle">PAVEE −6.2V</text>
+
+    <line class="wp" x1="440" y1="57"  x2="560" y2="57"/><text class="netp" x="562" y="54">PVCC_1V8 → J1-19,20</text>
+    <line class="wp" x1="440" y1="105" x2="560" y2="105"/><text class="netp" x="562" y="102">PAVDD → J1-22,23</text>
+    <line class="wp" x1="440" y1="153" x2="560" y2="153"/><text class="netp" x="562" y="150">PAVEE → J1-25,26</text>
+
+    <!-- JP1 selector -->
+    <rect class="conn" x="70" y="200" width="180" height="56" rx="6"/>
+    <text class="lbl" x="160" y="220" text-anchor="middle">JP1 Dual-LCM select</text>
+    <text class="ref" x="160" y="234" text-anchor="middle">1-2 = 9.55″ · 2-3 = 17″</text>
+    <text class="val" x="160" y="247" text-anchor="middle">→ PANEL_ID (PS GPIO)</text>
+
+    <!-- SW1 -->
+    <rect class="conn" x="280" y="200" width="150" height="40" rx="6"/>
+    <text class="lbl" x="355" y="219" text-anchor="middle">SW1</text>
+    <text class="ref" x="355" y="232" text-anchor="middle">manual panel HV cut</text>
+
+    <!-- U18 sequencer -->
+    <rect class="ic" x="470" y="200" width="200" height="70" rx="6"/>
+    <text class="lbl" x="570" y="222" text-anchor="middle">U18 TPS386596</text>
+    <text class="ref" x="570" y="236" text-anchor="middle">supervisor / sequencer</text>
+    <text class="val" x="570" y="250" text-anchor="middle">EN_* · PG_ALL · PS_POR</text>
+    <text class="ref" x="570" y="263" text-anchor="middle">on: VDDIO→AVDD→AVEE</text>
+
+    <text class="ref" x="700" y="215">On 序：VDDIO(1.8V)→AVDD(+6.2)→AVEE(−6.2)  T2=200/T8=120ms</text>
+    <text class="ref" x="700" y="231">Off/放電序（含 0xA7 reset）：AVEE→AVDD→VDDIO  T9=150/T14=100ms</text>
+    <text class="ref" x="700" y="247">FPGA：0.85V 先於 VCCO/1.8V；PG gating 後放 PS_POR。</text>
+  </svg>
+    <div class="figcap">
+      <div class="figcap-b"><h5>這張在看什麼</h5><p>面板三條 bias 電壓怎麼產生、怎麼被開關、順序由誰決定。這是唯一與 USB 協定有交集的一張——0xA7 reset 的受控放電就落在這裡。</p><div class="flow"><span class="hot">VBUS_5V</span><i>→</i><span>U16 TPS65131</span><i>→</i><span>U17A/B/C load switch</span><i>→</i><span>J1-19~26</span><i>→</i><span>面板</span></div><p style="color:var(--warn)"><b>注意</b>　開機序 VDDIO → AVDD → AVEE（T2=200／T8=120 ms）；關斷與 0xA7 放電序反向（T9=150／T14=100 ms）。FPGA 側 0.85 V 須早於 VCCO／1.8 V。此張<b>不受 07-05 變更影響</b>。</p></div>
+      <div class="parts"><div class="tw"><table><thead><tr><th>位號</th><th>元件</th><th>作用</th></tr></thead><tbody><tr><td><code>U16</code></td><td>TPS65131</td><td>dual ± TFT bias，產生 +6.2 V／−6.2 V／1.8 V</td></tr><tr><td><code>U17A</code></td><td>TPS22965</td><td>PVCC_1V8（VDDIO）→ J1-19,20</td></tr><tr><td><code>U17B</code></td><td>TPS22965</td><td>PAVDD +6.2 V → J1-22,23</td></tr><tr><td><code>U17C</code></td><td>TPS22965</td><td>PAVEE −6.2 V → J1-25,26</td></tr><tr><td><code>U18</code></td><td>TPS386596</td><td>supervisor／sequencer，控制順序與 PG gating</td></tr><tr><td><code>JP1</code></td><td>跳線</td><td>面板選擇 1-2 ＝ 9.55″、2-3 ＝ 17″ → PANEL_ID</td></tr><tr><td><code>SW1</code></td><td>手動開關</td><td>面板高壓手動切斷，維修用</td></tr></tbody></table></div></div>
+    </div>
+  </div>
+  <div class="sheet">
+    <div class="figtitle">參考圖 Sheet 4　連接器定義 — 有效</div>
+    <svg viewBox="0 0 1120 340" role="img" aria-label="Sheet 4 connectors">
+    <!-- J1 -->
+    <rect class="conn" x="40" y="30" width="230" height="270" rx="8"/>
+    <text class="lbl" x="155" y="52" text-anchor="middle">J1 — Power Inlet (30 pads)</text>
+    <text class="ref" x="155" y="66" text-anchor="middle">castellated, 2.0mm pitch</text>
+    <g class="val" text-anchor="start">
+      <text x="60" y="92">1,2  VCC_5V</text><text x="60" y="110">4,5  VCC_3V3</text>
+      <text x="60" y="128">7,8  VCC_1V8</text><text x="60" y="146">10,11 VCC_1V2</text>
+      <text x="60" y="164">13,14 VCC_1V1</text><text x="60" y="182">16,17 VCC_0V85</text>
+    </g>
+    <g class="netp" text-anchor="start">
+      <text x="60" y="204">19,20 PVCC_1V8</text><text x="60" y="222">22,23 PAVDD +6.2</text>
+      <text x="60" y="240">25,26 PAVEE −6.2</text>
+    </g>
+    <text class="ref" x="60" y="262">3,6,9,12,15,18,21,24,27–30 = GND</text>
+    <line class="wr" x1="0" y1="78" x2="40" y2="78"/><text class="net" x="2" y="72">rails (Sheet 2/3)</text>
+
+    <!-- J3 USB/UART -->
+    <rect class="conn" x="330" y="30" width="200" height="120" rx="8"/>
+    <text class="lbl" x="430" y="52" text-anchor="middle">J3 (core-board, LEFT)</text>
+    <text class="val" x="430" y="70" text-anchor="middle">4,5 = DP/DN (USB2.0)</text>
+    <text class="val" x="430" y="86" text-anchor="middle">1,2 = UART1 TX/RX</text>
+    <text class="ref" x="430" y="102" text-anchor="middle">10–17 = PS-GTR (未用/確認)</text>
+    <text class="ref" x="430" y="118" text-anchor="middle">7,8 = Ethernet LED</text>
+
+    <!-- J11 USB header -->
+    <rect class="conn" x="580" y="30" width="200" height="54" rx="6"/>
+    <text class="lbl" x="680" y="50" text-anchor="middle">J11 USB 2.0 (Device)</text>
+    <text class="val" x="680" y="64" text-anchor="middle">VBUS(sense)·D+·D−·GND</text>
+    <text class="ref" x="680" y="77" text-anchor="middle">板端不供 5V；VBUS 由 Host</text>
+    <line class="w" x1="530" y1="70" x2="580" y2="57"/>
+
+    <!-- J12 UART1 -->
+    <rect class="conn" x="580" y="96" width="200" height="40" rx="6"/>
+    <text class="lbl" x="680" y="115" text-anchor="middle">J12 UART1</text>
+    <text class="val" x="680" y="128" text-anchor="middle">TX·RX·GND·3V3</text>
+    <line class="w" x1="530" y1="86" x2="580" y2="112"/>
+
+    <!-- J2 debug -->
+    <rect class="conn" x="330" y="170" width="200" height="90" rx="8"/>
+    <text class="lbl" x="430" y="190" text-anchor="middle">J2 (core-board, TOP)</text>
+    <text class="val" x="430" y="206" text-anchor="middle">1,2 SWCLK/SWDIO</text>
+    <text class="val" x="430" y="221" text-anchor="middle">29,30 UART0 RX/TX</text>
+    <text class="val" x="430" y="236" text-anchor="middle">27,28 I²C1 SDA/SCL</text>
+    <text class="ref" x="430" y="251" text-anchor="middle">36–41 MIO (3V3)</text>
+
+    <!-- J13 debug header -->
+    <rect class="conn" x="580" y="170" width="200" height="44" rx="6"/>
+    <text class="lbl" x="680" y="190" text-anchor="middle">J13 Debug header</text>
+    <text class="val" x="680" y="204" text-anchor="middle">SWD·UART0·I²C1·RST</text>
+    <line class="w" x1="530" y1="200" x2="580" y2="192"/>
+
+    <!-- J14 fan -->
+    <rect class="conn" x="580" y="226" width="200" height="44" rx="6"/>
+    <text class="lbl" x="680" y="246" text-anchor="middle">J14 Fan (PWM)</text>
+    <text class="ref" x="680" y="260" text-anchor="middle">獨立穩壓軌/PWM buck（勿直接吃 Vin）</text>
+
+    <text class="ref" x="820" y="60">MIPI 面板走核心板底邊 FPC (J6/J7)，</text>
+    <text class="ref" x="820" y="76">本板僅送 bias（J1 pad 19–26），不含 MIPI。</text>
+  </svg>
+    <div class="figcap">
+      <div class="figcap-b"><h5>這張在看什麼</h5><p>所有對外接頭的位置與腳位定義。J1 是送電給核心板的 30-pad castellated 邊，其餘為 USB、UART、debug 與風扇。</p><div class="flow"><span>J1 電源出</span><i>·</i><span>J11 USB Device</span><i>·</i><span>J12 UART1</span><i>·</i><span>J13 Debug</span><i>·</i><span>J14 Fan</span></div><p style="color:var(--warn)"><b>注意</b>　MIPI 面板訊號走核心板底邊 FPC（J6/J7），本板只送 bias（J1 pad 19–26）。J1 pad 10–17 為 PS-GTR，本案未用。此張<b>不受 07-05 變更影響</b>。</p></div>
+      <div class="parts"><div class="tw"><table><thead><tr><th>位號</th><th>元件</th><th>作用</th></tr></thead><tbody><tr><td><code>J1</code></td><td>Power Inlet 30 pads</td><td>castellated 2.0 mm；3,6,9,12,15,18,21,24,27–30 ＝ GND</td></tr><tr><td><code>J3</code></td><td>核心板左側</td><td>4,5 ＝ DP/DN（USB 2.0）；1,2 ＝ UART1 TX/RX</td></tr><tr><td><code>J11</code></td><td>USB 2.0 Device</td><td>VBUS(sense)·D+·D−·GND。<b>板端不供 5 V</b></td></tr><tr><td><code>J12</code></td><td>UART1</td><td>TX·RX·GND·3V3</td></tr><tr><td><code>J2</code></td><td>核心板頂側</td><td>36–41 MIO（3V3）；7,8 Ethernet LED</td></tr><tr><td><code>J13</code></td><td>Debug header</td><td>SWD·UART0（29,30）·I²C1（27,28）·RST</td></tr><tr><td><code>J14</code></td><td>Fan（PWM）</td><td><b>需獨立穩壓軌／PWM buck，勿直接吃 Vin</b></td></tr></tbody></table></div></div>
+    </div>
+  </div>
+
+  <p class="cap">可匯入原始檔：<code>FPGA_PowerBoard_v1.1_kicad/fpga_power_v11.kicad_sch</code>（33 元件、實線連接、GND 符號）。EasyEDA Pro 匯入方式：Start Page → Import KiCad → 選 <code>.kicad_sch</code>（不是 <code>.kicad_pro</code>，不在接受清單）。連接器／匯流排的腳建議用短樁 ＋ net label，避免長線穿過共線腳造成短路。</p>
+</section>
+
+<section id="s10">
+  <h2><span class="num">10</span>交付檔案清單</h2>
+  <p class="h2n">以下檔案隨本文件一併交付。若有缺件請回報。</p>
+
+  <div class="tw"><table>
+    <thead><tr><th style="width:290px">檔案</th><th>內容</th><th style="width:110px">用途</th></tr></thead>
+    <tbody>
+      <tr><td><code>fpga_power_v11.kicad_sch</code></td><td>KiCad 概念原理圖，33 元件</td><td>設計起點</td></tr>
+      <tr><td><code>XCZU1CG_FPGA_Power_Board_v1.1.net</code></td><td>Netlist</td><td>參考</td></tr>
+      <tr><td><code>XCZU1CG_FPGA_Power_Baseboard_Spec_v2.0.docx</code><br>（英／繁中兩版）</td><td>正式規格書 v2.0</td><td>規格依據</td></tr>
+      <tr><td><code>XCZU1CG_FPGA_Core_Board_Datasheet_v1.2</code></td><td>核心板規格，含 J1 pad define、各軌電流</td><td><b>必讀</b></td></tr>
+      <tr><td><code>USB Communication Protocol Specification</code></td><td>USB 協定（FW v5.0）</td><td>參考（非本板範圍）</td></tr>
+      <tr><td>Innolux <code>ZE096DA-01A</code> ／ <code>ZE170DA-01A</code> 面板規格</td><td>bias 電壓、電流、開關序、XDYT 51-pin FPC</td><td>bias 設計依據</td></tr>
+      <tr><td><code>3D_PRINT_16K_IOB_1V1</code> DSN／PDF</td><td>第一版 IOB，含已驗證的寬 Vin 前級（LM5175）</td><td>架構參考</td></tr>
+      <tr><td>Stratasys 輸入級參考圖（IMG_6051）</td><td>客戶側 12 V 輸入級，含 J5 接頭定義</td><td>對接依據</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s11">
+  <h2><span class="num">11</span>待決事項</h2>
+  <p class="h2n">以下項目在開始 layout 前應先取得，否則可能需要 respin。</p>
+
+  <div class="tw"><table>
+    <thead><tr><th style="width:52px">#</th><th>項目</th><th style="width:150px">負責</th><th style="width:130px">影響</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td><b>三種面板的 bias 電壓與 source-driver 電流</b><br>07-05 定案的 7.1″ 8K（群創）／10″ 16K／13.5″ 16K，各自數值尚未取得。大尺寸面板 source-driver 電流較高，須據以重算 bias 與 1.8 V 裕度</td><td>普羅森<br>（Darrell／Katel）</td><td><span class="tag t-open">擋 layout</span><br>影響 §3.2</td></tr>
+      <tr><td class="n">2</td><td><b>1.8 V DC-DC 最終定額</b><br>取決於 PS-GTR link speed 與 lane 數。目前建議 ≥ 3 A</td><td>Racer</td><td><span class="tag t-chg">影響選型</span></td></tr>
+      <tr><td class="n">3</td><td><b>Micro-Fit 接頭方向最終確認</b><br>板端 43650-0200 為直角（R/A）header，須與客戶機構確認出線方向</td><td>Stratasys<br>／普羅森</td><td><span class="tag t-chg">影響機構</span></td></tr>
+      <tr><td class="n">4</td><td><b>風扇軌規格</b><br>J14 需獨立穩壓軌或 PWM buck，電壓與電流規格待定</td><td>普羅森</td><td><span class="tag t-chg">影響 BOM</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note">
+    <div class="note-h">與本板無關但同專案進行中的項目</div>
+    <p>客戶另於 07-05 提出<b>影像格式由 3-bit 改為 6-bit</b>（單張資料量由 37.56 MB 升至約 75 MB），涉及 USB 封包定義、DDR FIFO 槽數與韌體時序。<b>此項純屬韌體與協定層，不影響本供電板的任何電氣設計</b>，在此僅作知會。</p>
+  </div>
+</section>
+
+<section id="s12">
+  <h2><span class="num">12</span>交接檢查清單</h2>
+  <p class="h2n">建議雙方逐項確認後簽署。</p>
+
+  <div class="ck">
+    <div class="ck-r"><div class="ck-b"></div><p>已收到 §10 全部交付檔案，無缺件</p><div class="who">西柏</div></div>
+    <div class="ck-r"><div class="ck-b"></div><p>已理解 §2 設計變更 —— 實作依<b>單一輸入</b>規格，不照 v1.1 Sheet 1</p><div class="who">西柏</div></div>
+    <div class="ck-r"><div class="ck-b"></div><p>已確認 §6 J1 pad map 不可更動，並據此規劃 layout</p><div class="who">西柏</div></div>
+    <div class="ck-r"><div class="ck-b"></div><p>已確認 §4 TVS 須用 SMBJ30A（非客戶參考圖的 SMBJ14A）</p><div class="who">西柏</div></div>
+    <div class="ck-r"><div class="ck-b"></div><p>已確認 §3.1 之 1.8 V 軌須設計 ≥ 3 A</p><div class="who">西柏</div></div>
+    <div class="ck-r"><div class="ck-b"></div><p>已確認 §5 上下電時序要求，含 <code>0xA7</code> 受控放電</p><div class="who">西柏</div></div>
+    <div class="ck-r"><div class="ck-b"></div><p>已提供 §11 第 1 項：三種面板的 bias 電壓與 source-driver 電流</p><div class="who">普羅森</div></div>
+    <div class="ck-r"><div class="ck-b"></div><p>已回覆 §11 第 2 項：1.8 V DC-DC 最終定額</p><div class="who">Racer</div></div>
+    <div class="ck-r"><div class="ck-b"></div><p>雙方確認交付時程與里程碑（schematic ／ layout ／ proto ／ bring-up）</p><div class="who">雙方</div></div>
+    <div class="ck-r"><div class="ck-b"></div><p>已指定雙方技術窗口與聯絡方式</p><div class="who">雙方</div></div>
+  </div>
+</section>
+
+<footer>
+  <span>奔馳科技 Racer Tech · www.racer-tech.com　│　Design Handover v1.0 · 2026-09-23</span>
+  <span>CONFIDENTIAL — Racer Tech ／ 西柏科技 ／ 普羅森 專案使用</span>
+</footer>
+
+</div>
+</body>
+</html>
