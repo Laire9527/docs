@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RPi 主系統與 LCD 子系統板 資料串接方案</title>
+<style>
+:root {
+    --bg: #12151b; --panel: #191d25; --soft: #212632; --ink: #e2e6ee; --muted: #9aa3b4;
+    --line: #2d3442; --accent: #7fb0e0;
+    --ok: #7fd6a0; --ok-bg: #1d3a2a; --wip: #f0c36a; --wip-bg: #3d3018;
+    --todo: #b8c0ce; --todo-bg: #2a303c; --warn: #f08a7a; --warn-bg: #3a201d;
+    --int: #f08a7a;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    background: var(--bg); color: var(--ink); font-size: 16px; line-height: 1.7; margin: 0;
+  }
+  .wrap {
+    max-width: 1180px; margin: 0 auto; padding: 0 20px 64px;
+    display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px;
+  }
+  main { min-width: 0; padding-top: 40px; }
+
+  /* ---- 左側目錄 ---- */
+  nav.toc { position: sticky; top: 24px; align-self: start; padding-top: 40px; font-size: 14px; max-height: calc(100vh - 24px); overflow-y: auto; }
+  nav.toc .toc-title { color: var(--muted); font-size: 12px; letter-spacing: .08em; margin-bottom: 8px; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  nav.toc a { color: var(--muted); text-decoration: none; display: block; padding: 2px 0 2px 10px; border-left: 2px solid var(--line); }
+  nav.toc a:hover, nav.toc a:focus-visible { color: var(--accent); border-left-color: var(--accent); outline: none; }
+  nav.toc a.int { color: var(--int); }
+  nav.toc .toc-foot { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); display: grid; gap: 4px; }
+
+  /* 窄螢幕：目錄改放在內容上方（不隱藏），另有右下角浮動「▲」 */
+  a.fab { display: none; }
+  @media (max-width: 900px) {
+    .wrap { display: flex; flex-direction: column; padding: 0 16px 64px; }
+    .wrap > main { display: contents; }
+    main > header { order: 0; margin-top: 24px; margin-bottom: 0; }
+    nav.toc { order: 1; position: static; max-height: none; padding: 16px; margin-top: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+    main > .content { order: 2; }
+    h1 { font-size: 23px; }
+    a.fab {
+      display: block; position: fixed; right: 16px; bottom: 16px; z-index: 10;
+      width: 44px; height: 44px; line-height: 44px; text-align: center; border-radius: 50%;
+      background: var(--accent); color: #10141b; text-decoration: none; font-weight: 700;
+      box-shadow: 0 2px 8px rgba(0,0,0,.4);
+    }
+  }
+
+  header { border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 18px; }
+  header .kicker { color: var(--accent); font-size: 13px; letter-spacing: .08em; font-weight: 600; }
+  h1 { font-size: 28px; margin: 4px 0 6px; line-height: 1.35; }
+  header .meta { color: var(--muted); font-size: 13px; }
+  section { scroll-margin-top: 16px; }
+  h2 { font-size: 21px; color: var(--accent); margin: 36px 0 10px; padding-bottom: 4px; border-bottom: 1px solid var(--line); scroll-margin-top: 16px; }
+  h3 { font-size: 17px; margin: 22px 0 8px; scroll-margin-top: 16px; }
+  p { margin: 6px 0 10px; }
+  ul, ol { margin: 6px 0 10px; padding-left: 22px; }
+  li { margin: 3px 0; }
+  b { color: #fff; }
+  code { font-family: Consolas, "DejaVu Sans Mono", monospace; font-size: 14px; background: var(--soft); padding: 1px 5px; border-radius: 3px; }
+
+  .tbl { overflow-x: auto; margin: 8px 0 14px; }
+  table { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 15px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--soft); font-weight: 600; }
+  td ul { margin: 0; }
+  td.num { text-align: right; white-space: nowrap; }
+  .tag { display: inline-block; font-size: 13px; font-weight: 600; padding: 1px 9px; border-radius: 10px; white-space: nowrap; }
+  .ok { color: var(--ok); background: var(--ok-bg); }
+  .wip { color: var(--wip); background: var(--wip-bg); }
+  .todo { color: var(--todo); background: var(--todo-bg); }
+  .note { background: var(--panel); border-left: 3px solid var(--accent); padding: 10px 14px; margin: 10px 0 14px; font-size: 15px; }
+  .warn { background: var(--warn-bg); border-left: 3px solid var(--warn); padding: 10px 14px; margin: 10px 0 14px; font-size: 15px; }
+
+  .scroll-x { overflow-x: auto; }
+  .flow { display: flex; align-items: center; gap: 8px; margin: 10px 0 14px; flex-wrap: nowrap; min-width: 560px; }
+  .box { border: 1.5px solid var(--accent); border-radius: 6px; padding: 6px 12px; text-align: center; font-size: 15px; background: var(--panel); min-width: 90px; }
+  .box small { display: block; color: var(--muted); font-size: 12px; }
+  .box.cust { border-color: #7a8699; background: var(--soft); }
+  .arrow { color: var(--muted); font-size: 13px; text-align: center; white-space: nowrap; }
+  .arrow b { display: block; color: var(--ink); font-size: 13px; }
+  .arrow::after { content: "→"; display: block; font-size: 20px; line-height: 1; color: var(--accent); }
+
+  /* 接線示意圖：原圖為淺色配色，放在淺色底卡片上保持可讀 */
+  figure.wiring { margin: 12px 0 16px; background: #eef1f5; border-radius: 8px; padding: 10px; overflow-x: auto; }
+  figure.wiring svg { width: 100%; min-width: 640px; height: auto; display: block; }
+
+  .internal { border-top: 3px solid var(--int); margin-top: 40px; }
+  .internal h2 { color: var(--int); border-bottom-color: #5a2e28; }
+  .qa td:first-child { width: 38%; font-weight: 600; }
+  footer { margin-top: 32px; padding-top: 8px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  /* ---- 版本切換標籤 ---- */
+  .versions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 18px; }
+  .versions .grp { display: flex; gap: 4px; padding-right: 8px; border-right: 1px solid var(--line); }
+  .versions .grp:last-child { border-right: 0; }
+  .versions a {
+    font-size: 13px; padding: 3px 12px; border-radius: 999px; text-decoration: none; white-space: nowrap;
+    color: var(--muted); border: 1px solid var(--line); background: var(--panel);
+  }
+  .versions a:hover, .versions a:focus-visible { color: var(--accent); border-color: var(--accent); outline: none; }
+  .versions a.on { color: #10141b; background: var(--accent); border-color: var(--accent); font-weight: 700; }
+  .versions a.int.on { background: var(--int); border-color: var(--int); }
+  @media (max-width: 900px) { .versions { order: 0; margin-top: 16px; margin-bottom: 0; } }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc" aria-label="目錄">
+  <div class="toc-title">目錄</div>
+  <ol>
+    <li><a href="#s1">1. 背景</a></li>
+    <li><a href="#s2">2. 方案一：SPI 直連 FPGA</a></li>
+    <li><a href="#s3">3. 方案二：USB Gadget 接 SoC</a></li>
+    <li><a href="#s4">4. 方案比較</a></li>
+    <li><a href="#s5">5. 請貴司提供的資訊</a></li>
+    <li><a href="#s6">6. 後續步驟</a></li>
+    <li><a class="int" href="#s7">7. 內部補充（不對外）</a></li>
+  </ol>
+  <div class="toc-foot">
+    <a href="#top">▲ 回到最上方</a>
+    <a href="ssys_atlas.html">← 回上一頁</a>
+  </div>
+</nav>
+
+<main>
+<nav class="versions" aria-label="版本">
+  <div class="grp">
+    <a class="int on" aria-current="page" href="rpi_interface_internal_cht.html">內部中文版</a>
+    <a class="int" href="rpi_interface_internal_en.html">內部英文版</a>
+  </div>
+  <div class="grp">
+    <a href="rpi_interface_customer_cht.html">客戶中文版</a>
+    <a href="rpi_interface_customer_en.html">客戶英文版</a>
+  </div>
+  <div class="grp">
+    <a href="rpi_interface_proposal_cht.html">簡報中文版</a>
+    <a href="rpi_interface_proposal_en.html">簡報英文版</a>
+  </div>
+</nav>
+
+<header id="top">
+  <div class="kicker">PHROZEN · LCD 子系統板</div>
+  <h1>RPi 主系統與 LCD 子系統板<br>資料串接方案評估</h1>
+  <div class="meta">版本：草案 v0.1　｜　日期：2026-11-12　｜　討論範圍：方案一、方案二</div>
+</header>
+
+<div class="content">
+<h2 id="s1">1. 背景</h2>
+<p>本產品為光固化 3D 列印機。主系統（RPi 4 / RPi 5）由貴司開發，Phrozen 負責子系統板：接收切片圖、驅動 LCD 及控制 UV LED。</p>
+
+<div class="tbl"><table>
+  <tr><th style="width:28%">項目</th><th>規格</th></tr>
+  <tr><td>子系統 SoC</td><td>SigmaStar SSD202D</td></tr>
+  <tr><td>子系統 FPGA</td><td>Gowin GW5A-EV25-UG324SC2/I1（BGA-324）</td></tr>
+  <tr><td>LCD</td><td>14K，13344 × 7500，每 pixel 6 bit</td></tr>
+  <tr><td>每層資料量（raw）</td><td>13344 × 7500 × 6 bit ≈ <b>75 MB</b></td></tr>
+</table></div>
+
+<h3>目前架構</h3>
+<div class="scroll-x"><div class="flow">
+  <div class="box cust">RPi<small>主系統</small></div>
+  <div class="arrow"><b>傳圖</b></div>
+  <div class="box">SSD202D<small>SoC</small></div>
+  <div class="arrow"><b>SPI</b></div>
+  <div class="box">GW5A<small>FPGA</small></div>
+  <div class="arrow"><b>MIPI</b></div>
+  <div class="box">LCD Driver<small>14K LCD</small></div>
+</div></div>
+
+<div class="warn">
+  <b>USB 角色限制：</b>貴司希望以 USB 2.0 串接。經原廠確認，SSD202D 的 USB 控制器僅支援 <b>Host</b>，無法改為 Device，因此無法直接作為 RPi USB Host 埠的周邊裝置。以下兩個方案為因應此限制而提出。
+</div>
+
+<h3>傳輸時間參考</h3>
+<div class="tbl"><table>
+  <tr><th>傳輸速度</th><th class="num">每層 75 MB 所需時間</th><th>備註</th></tr>
+  <tr><td>6 MB/s</td><td class="num">約 12.5 秒</td><td>方案一估計下限</td></tr>
+  <tr><td>12 MB/s</td><td class="num">約 6.3 秒</td><td>方案一估計上限／方案二 RPi 4 ↔ PC 實測</td></tr>
+  <tr><td>約 35 MB/s</td><td class="num">約 2.1 秒</td><td>USB 2.0 bulk 實務上限</td></tr>
+</table></div>
+<div class="note">若傳輸未壓縮，兩方案的傳輸時間均可能長於單層列印週期。建議同步評估 <b>RLE 等壓縮</b>（切片圖通常壓縮率很高），以及在曝光／抬升期間傳下一層的<b>雙緩衝</b>機制。</div>
+
+<div class="option">
+<h2 id="s2">2. 方案一：RPi 以 SPI 直連 FPGA</h2>
+<p>移除 SoC，RPi 直接以 SPI 送圖給 FPGA，並沿用既有的 FPGA 指令控制 LCD。</p>
+
+<figure class="wiring"><svg class="d" viewBox="0 0 900 330" xmlns="http://www.w3.org/2000/svg" role="img"><style>
+.d text{font-family:inherit;fill:#1d2433;}
+.d .t{font-size:13px;font-weight:600;}
+.d .s{font-size:10.5px;fill:#5b6577;}
+.d .w{font-size:10.5px;}
+.d .lb{font-size:11px;font-weight:600;}
+</style><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2f5d8a"/></marker></defs><text x="18" y="118" class="lb" text-anchor="start">電源輸入</text><polyline points="20,128 82,128" fill="none" stroke="#2f5d8a" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arr)"/><rect x="90" y="40" width="260" height="250" rx="8" fill="#f4f6f9" stroke="#7a8699" stroke-width="2"/><text x="104" y="64" class="t" text-anchor="start">RPi 4 / 5</text><text x="104" y="80" class="s" text-anchor="start">主系統（貴司）</text><rect x="84" y="108" width="64" height="40" rx="5" fill="#fff" stroke="#1d2433" stroke-width="1.6"/><text x="116" y="132" class="w" text-anchor="middle">USB-C</text><rect x="296" y="62" width="25" height="205" rx="2" fill="#2b3240" stroke="#2b3240" stroke-width="1"/><rect x="300" y="66" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="66" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="76" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="76" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="86" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="86" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="96" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="96" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="106" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="106" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="116" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="116" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="126" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="126" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="136" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="136" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="146" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="146" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="156" width="7" height="7" rx="1" fill="#2f5d8a"/><rect x="310" y="156" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="166" width="7" height="7" rx="1" fill="#2f5d8a"/><rect x="310" y="166" width="7" height="7" rx="1" fill="#b07a00"/><rect x="300" y="176" width="7" height="7" rx="1" fill="#2f5d8a"/><rect x="310" y="176" width="7" height="7" rx="1" fill="#2f5d8a"/><rect x="300" y="186" width="7" height="7" rx="1" fill="#1d2433"/><rect x="310" y="186" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="196" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="196" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="206" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="206" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="216" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="216" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="226" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="226" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="236" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="236" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="246" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="246" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="256" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="256" width="7" height="7" rx="1" fill="#8a93a3"/><text x="308" y="54" class="s" text-anchor="middle">40-pin GPIO</text><rect x="104" y="192" width="8" height="8" rx="1" fill="#2f5d8a"/><text x="118" y="200" class="s" text-anchor="start">SPI：pin 19 / 21 / 23 / 24</text><rect x="104" y="208" width="8" height="8" rx="1" fill="#1d2433"/><text x="118" y="216" class="s" text-anchor="start">GND：pin 25</text><rect x="104" y="224" width="8" height="8" rx="1" fill="#b07a00"/><text x="118" y="232" class="s" text-anchor="start">BUSY（例）：pin 22</text><polyline points="307.5,159.5 334,159.5 360,136 430,136" fill="none" stroke="#2f5d8a" stroke-width="1.4" stroke-linejoin="round"/><text x="398" y="133" class="s" text-anchor="middle">MOSI</text><polyline points="307.5,169.5 334,169.5 360,152 430,152" fill="none" stroke="#2f5d8a" stroke-width="1.4" stroke-linejoin="round"/><text x="398" y="149" class="s" text-anchor="middle">MISO</text><polyline points="307.5,179.5 334,179.5 360,168 430,168" fill="none" stroke="#2f5d8a" stroke-width="1.4" stroke-linejoin="round"/><text x="398" y="165" class="s" text-anchor="middle">SCLK</text><polyline points="317.5,179.5 334,179.5 360,184 430,184" fill="none" stroke="#2f5d8a" stroke-width="1.4" stroke-linejoin="round"/><text x="398" y="181" class="s" text-anchor="middle">CE0</text><polyline points="317.5,169.5 334,169.5 360,200 430,200" fill="none" stroke="#b07a00" stroke-width="1.4" stroke-linejoin="round" stroke-dasharray="4 3"/><text x="398" y="197" class="s" text-anchor="middle">BUSY</text><polyline points="307.5,189.5 334,189.5 360,216 430,216" fill="none" stroke="#1d2433" stroke-width="1.4" stroke-linejoin="round"/><text x="398" y="213" class="s" text-anchor="middle">GND</text><rect x="430" y="118" width="92" height="116" rx="8" fill="#f4f6f9" stroke="#7a8699" stroke-width="2"/><text x="476" y="172" class="t" text-anchor="middle">轉接板</text><text x="476" y="252" class="s" text-anchor="middle">量產需設計</text><text x="476" y="266" class="s" text-anchor="middle">控制線長／接頭</text><polyline points="522,136 590,136" fill="none" stroke="#5b6577" stroke-width="1.4" stroke-linejoin="round"/><polyline points="522,152 590,152" fill="none" stroke="#5b6577" stroke-width="1.4" stroke-linejoin="round"/><polyline points="522,168 590,168" fill="none" stroke="#5b6577" stroke-width="1.4" stroke-linejoin="round"/><polyline points="522,184 590,184" fill="none" stroke="#5b6577" stroke-width="1.4" stroke-linejoin="round"/><polyline points="522,200 590,200" fill="none" stroke="#5b6577" stroke-width="1.4" stroke-linejoin="round"/><polyline points="522,216 590,216" fill="none" stroke="#5b6577" stroke-width="1.4" stroke-linejoin="round"/><text x="556.0" y="126" class="s" text-anchor="middle">SPI 排線</text><rect x="590" y="40" width="190" height="250" rx="8" fill="#e8eff7" stroke="#2f5d8a" stroke-width="2"/><text x="604" y="64" class="t" text-anchor="start">LCD 子系統板（Phrozen）</text><rect x="584" y="124" width="26" height="104" rx="3" fill="#fff" stroke="#2f5d8a" stroke-width="1.6"/><text x="597" y="244" class="s" text-anchor="middle">接頭</text><rect x="640" y="86" width="116" height="42" rx="6" fill="#fff" stroke="#b6bdc9" stroke-width="1.6" stroke-dasharray="5 4"/><text x="698" y="104" class="w" text-anchor="middle" style="fill:#b6bdc9">SSD202D</text><text x="698" y="119" class="s" text-anchor="middle" style="fill:#b6bdc9">移除</text><polyline points="646,96 750,120" fill="none" stroke="#b6bdc9" stroke-width="1.2" stroke-linejoin="round"/><rect x="640" y="148" width="116" height="60" rx="6" fill="#fff" stroke="#2f5d8a" stroke-width="1.6"/><text x="698" y="183" class="lb" text-anchor="middle">GW5A FPGA</text><polyline points="610,178 638,178" fill="none" stroke="#2f5d8a" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arr)"/><polyline points="756,178 818,178" fill="none" stroke="#2f5d8a" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arr)"/><text x="784" y="170" class="s" text-anchor="start">MIPI</text><rect x="820" y="140" width="66" height="76" rx="6" fill="#fff" stroke="#1d2433" stroke-width="1.6"/><text x="853" y="175" class="lb" text-anchor="middle">14K LCD</text><text x="853" y="192" class="s" text-anchor="middle">LCD Driver</text><rect x="90" y="309" width="14" height="10" rx="2" fill="#f4f6f9" stroke="#7a8699" stroke-width="1.2"/><text x="109" y="318" class="s" text-anchor="start">貴司</text><rect x="170" y="309" width="14" height="10" rx="2" fill="#e8eff7" stroke="#2f5d8a" stroke-width="1.2"/><text x="189" y="318" class="s" text-anchor="start">Phrozen</text></svg></figure>
+
+<div class="section">
+<h3>2.1 目前進度（Phrozen）</h3>
+<div class="tbl"><table>
+  <tr><th style="width:52%">項目</th><th style="width:16%">狀態</th><th>說明</th></tr>
+  <tr><td>沿用既有 FPGA 的 LCD 控制指令</td><td><span class="tag ok">可沿用</span></td><td>現有功能</td></tr>
+  <tr><td>子系統板硬體修改（測試用跳線）</td><td><span class="tag wip">確認中</span></td><td>與硬體同仁確認中，目前尚無測試板</td></tr>
+  <tr><td>RPi → FPGA 實際傳輸速度</td><td><span class="tag todo">待測試</span></td><td>目前 6～12 MB/s 為估計值</td></tr>
+  <tr><td>光機／UV LED 等額外控制</td><td><span class="tag todo">待評估</span></td><td>可能需修改 FPGA，本次暫不討論</td></tr>
+</table></div>
+</div>
+
+<div class="section">
+<h3>2.2 貴司需配合的改動</h3>
+<div class="tbl"><table>
+  <tr><th style="width:16%">類別</th><th>內容</th></tr>
+  <tr><td>硬體</td><td>
+    <ul>
+      <li>量產需設計<b>轉接板</b>將 SPI 引出（測試階段可用跳線，量產不可）</li>
+      <li>確認 RPi <b>GPIO 目前占用狀況</b>：SPI0（GPIO 7～11）之外，建議另保留 1～2 支 GPIO 作為 busy／ready 或中斷（SPI 本身無流量控制）</li>
+      <li>控制線長與接頭品質，SPI 跨板在高時脈下易受訊號完整性影響</li>
+    </ul></td></tr>
+  <tr><td>軟體</td><td>
+    <ul>
+      <li>使用 spidev 驅動，需調大 <code>spidev.bufsiz</code>（預設每次僅 4 KB）</li>
+      <li>實作雙方議定之傳輸協定（含 ack／CRC 錯誤檢查）</li>
+    </ul></td></tr>
+  <tr><td>系統分工</td><td>原由 SoC 負責的控制功能，需改由主系統或 FPGA 承接（待討論）</td></tr>
+</table></div>
+</div>
+</div>
+
+<div class="option">
+<h2 id="s3">3. 方案二：RPi USB Gadget 串接 SoC</h2>
+<p>保留現有子系統架構。RPi 的 Type-C 埠切換為 USB Device（Gadget）模式，接到 SSD202D 的 USB Host（Type-A）埠。</p>
+
+<figure class="wiring"><svg class="d" viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg" role="img"><style>
+.d text{font-family:inherit;fill:#1d2433;}
+.d .t{font-size:13px;font-weight:600;}
+.d .s{font-size:10.5px;fill:#5b6577;}
+.d .w{font-size:10.5px;}
+.d .lb{font-size:11px;font-weight:600;}
+</style><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2f5d8a"/></marker></defs><rect x="20" y="22" width="150" height="50" rx="8" fill="#f4f6f9" stroke="#7a8699" stroke-width="2"/><text x="95" y="44" class="lb" text-anchor="middle">Type-C 電源</text><text x="95" y="60" class="s" text-anchor="middle">RPi 5 建議 PD 5V/5A</text><polyline points="95,72 95,148" fill="none" stroke="#c0392b" stroke-width="2.4" stroke-linejoin="round"/><text x="103" y="90" class="s" text-anchor="start">電源分支：VBUS / GND / CC</text><rect x="55" y="148" width="80" height="44" rx="10" fill="#fff" stroke="#7a8699" stroke-width="2"/><text x="95" y="175" class="lb" text-anchor="middle">Y cable</text><polyline points="135,170 186,170" fill="none" stroke="#1d2433" stroke-width="3" stroke-linejoin="round"/><rect x="190" y="100" width="260" height="230" rx="8" fill="#f4f6f9" stroke="#7a8699" stroke-width="2"/><text x="290" y="290" class="t" text-anchor="start">RPi 4 / 5</text><text x="290" y="306" class="s" text-anchor="start">主系統（貴司）</text><rect x="184" y="148" width="96" height="44" rx="5" fill="#fff" stroke="#1d2433" stroke-width="1.6"/><text x="232" y="174" class="w" text-anchor="middle">USB-C（Gadget）</text><rect x="406" y="116" width="25" height="205" rx="2" fill="#2b3240" stroke="#2b3240" stroke-width="1"/><rect x="410" y="120" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="120" width="7" height="7" rx="1" fill="#c0392b"/><rect x="410" y="130" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="130" width="7" height="7" rx="1" fill="#c0392b"/><rect x="410" y="140" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="140" width="7" height="7" rx="1" fill="#1d2433"/><rect x="410" y="150" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="150" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="160" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="160" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="170" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="170" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="180" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="180" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="190" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="190" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="200" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="200" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="210" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="210" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="220" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="220" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="230" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="230" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="240" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="240" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="250" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="250" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="260" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="260" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="270" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="270" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="280" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="280" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="290" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="290" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="300" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="300" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="310" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="310" width="7" height="7" rx="1" fill="#8a93a3"/><text x="418" y="338" class="s" text-anchor="middle">40-pin GPIO</text><rect x="204" y="222" width="8" height="8" rx="1" fill="#c0392b"/><text x="218" y="230" class="s" text-anchor="start">5V：pin 2 / 4</text><rect x="204" y="238" width="8" height="8" rx="1" fill="#1d2433"/><text x="218" y="246" class="s" text-anchor="start">GND：pin 6</text><rect x="300" y="22" width="190" height="50" rx="8" fill="#fff" stroke="#b07a00" stroke-width="1.6" stroke-dasharray="5 4"/><text x="395" y="44" class="lb" text-anchor="middle">替代：5V 電源板</text><text x="395" y="60" class="s" text-anchor="middle" style="fill:#b07a00">不建議，除非自帶保護電路</text><polyline points="420,72 420,95 443.5,95 443.5,123.5 427.5,123.5" fill="none" stroke="#b07a00" stroke-width="1.6" stroke-linejoin="round" stroke-dasharray="4 3"/><polyline points="460,72 460,88 453.5,88 453.5,143.5 427.5,143.5" fill="none" stroke="#b07a00" stroke-width="1.6" stroke-linejoin="round" stroke-dasharray="4 3"/><polyline points="95,192 95,350 520,350 520,250 552,250" fill="none" stroke="#2f5d8a" stroke-width="2.4" stroke-linejoin="round"/><text x="105" y="342" class="s" text-anchor="start">資料分支：D+ / D− / GND</text><rect x="560" y="100" width="230" height="230" rx="8" fill="#e8eff7" stroke="#2f5d8a" stroke-width="2"/><text x="574" y="124" class="t" text-anchor="start">LCD 子系統板（Phrozen）</text><rect x="552" y="228" width="56" height="44" rx="5" fill="#fff" stroke="#2f5d8a" stroke-width="1.6"/><text x="580" y="264" class="w" text-anchor="middle">USB-A</text><text x="580" y="290" class="s" text-anchor="middle" style="fill:#c0392b">VBUS 已移除</text><g stroke="#c0392b" stroke-width="2"><line x1="574" y1="234" x2="586" y2="246"/><line x1="586" y1="234" x2="574" y2="246"/></g><rect x="630" y="150" width="140" height="50" rx="6" fill="#fff" stroke="#2f5d8a" stroke-width="1.6"/><text x="700" y="172" class="lb" text-anchor="middle">SSD202D</text><text x="700" y="188" class="s" text-anchor="middle">USB Host</text><polyline points="608,250 620,250 620,175 628,175" fill="none" stroke="#2f5d8a" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arr)"/><rect x="630" y="250" width="140" height="50" rx="6" fill="#fff" stroke="#2f5d8a" stroke-width="1.6"/><text x="700" y="280" class="lb" text-anchor="middle">GW5A FPGA</text><polyline points="700,200 700,248" fill="none" stroke="#2f5d8a" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arr)"/><text x="706" y="228" class="s" text-anchor="start">SPI</text><polyline points="770,275 818,275" fill="none" stroke="#2f5d8a" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arr)"/><text x="794" y="267" class="s" text-anchor="start">MIPI</text><rect x="820" y="237" width="66" height="76" rx="6" fill="#fff" stroke="#1d2433" stroke-width="1.6"/><text x="853" y="272" class="lb" text-anchor="middle">14K LCD</text><text x="853" y="289" class="s" text-anchor="middle">LCD Driver</text><rect x="600" y="363" width="14" height="10" rx="2" fill="#f4f6f9" stroke="#7a8699" stroke-width="1.2"/><text x="619" y="372" class="s" text-anchor="start">貴司</text><rect x="680" y="363" width="14" height="10" rx="2" fill="#e8eff7" stroke="#2f5d8a" stroke-width="1.2"/><text x="699" y="372" class="s" text-anchor="start">Phrozen</text><polyline points="765,368 785,368" fill="none" stroke="#b07a00" stroke-width="1.6" stroke-linejoin="round" stroke-dasharray="4 3"/><text x="790" y="372" class="s" text-anchor="start">替代方案</text></svg></figure>
+
+<div class="section">
+<h3>3.1 目前進度（Phrozen）</h3>
+<div class="tbl"><table>
+  <tr><th style="width:52%">項目</th><th style="width:16%">狀態</th><th>說明</th></tr>
+  <tr><td>RPi 4 Type-C 切換為 Gadget 模式</td><td><span class="tag ok">已驗證</span></td><td>功能正常</td></tr>
+  <tr><td>RPi 4 ↔ PC 傳輸速度（g_serial）</td><td><span class="tag ok">已實測</span></td><td>約 <b>12 MB/s</b>，視為目前下限</td></tr>
+  <tr><td>改用 FunctionFS（USB bulk）提升速度</td><td><span class="tag todo">待評估</span></td><td>g_serial 經 tty 層，額外負擔較大，預期可再提升</td></tr>
+  <tr><td>RPi 5 Gadget 模式</td><td><span class="tag todo">待驗證</span></td><td>預期可行</td></tr>
+  <tr><td>RPi ↔ SoC 實際對接</td><td><span class="tag wip">進行中</span></td><td>SoC 端需修改 kernel</td></tr>
+</table></div>
+</div>
+
+<div class="section">
+<h3>3.2 貴司需配合的改動</h3>
+<div class="tbl"><table>
+  <tr><th style="width:16%">類別</th><th>內容</th></tr>
+  <tr><td>軟體</td><td>
+    <ul>
+      <li><code>config.txt</code> 加入 <code>dtoverlay=dwc2,dr_mode=peripheral</code>，並載入 Gadget 模組</li>
+      <li>傳圖程式改由 Gadget 端送出資料</li>
+    </ul></td></tr>
+  <tr><td>電源</td><td>
+    <ul>
+      <li>Type-C 原為 RPi 電源輸入，改為資料用途後，<b>建議使用 Y cable 將電源與資料分開</b>：
+        <ul>
+          <li>電源分支：VBUS、GND、<b>CC</b>（Type-C 電源須偵測到 RPi 的 CC 下拉電阻才會輸出；RPi 5 亦透過 CC 進行 PD 協商）</li>
+          <li>資料分支：D+、D−、GND</li>
+        </ul></li>
+      <li>不建議由 GPIO 5V 供電：此路徑未經過 RPi 的電源保護電路；除非貴司電源板已自帶保護</li>
+      <li>RPi 5：若電源未經 PD 協商出 5V/5A，USB 輸出會被限制在 600 mA。需使用支援 PD 的 Y cable，或於 <code>config.txt</code> 設定 <code>usb_max_current_enable=1</code></li>
+    </ul></td></tr>
+</table></div>
+<div class="note"><b>Phrozen 端對應：</b>為避免 SoC Host 輸出的 5V 與 RPi 電源互相回灌，子系統板將<b>移除 USB 埠的 VBUS 輸出</b>（保留 0Ω 電阻，日後可切換回一般 Host 用途，例如韌體更新）。因此無論 Y cable 資料端是否帶 VBUS，皆不影響使用。</div>
+</div>
+</div>
+
+<div class="option">
+<h2 id="s4">4. 方案比較</h2>
+<div class="tbl"><table>
+  <tr><th style="width:24%">項目</th><th style="width:38%">方案一：SPI 直連 FPGA</th><th>方案二：USB Gadget 接 SoC</th></tr>
+  <tr><td>傳輸速度</td><td>估計 6～12 MB/s（待實測）</td><td>RPi 4 ↔ PC 實測約 12 MB/s；整體速度另受 SoC → FPGA 段限制</td></tr>
+  <tr><td>驗證進度</td><td>尚無測試板</td><td>RPi 端已驗證；與 SoC 對接進行中</td></tr>
+  <tr><td>子系統架構</td><td>移除 SoC，架構精簡</td><td>維持現有架構</td></tr>
+  <tr><td>貴司硬體改動</td><td>SPI 轉接板、GPIO 規劃</td><td>電源與資料分離（Y cable，電源端需含 CC）</td></tr>
+  <tr><td>貴司軟體改動</td><td>spidev 驅動＋傳輸協定</td><td>Gadget 設定＋傳圖程式</td></tr>
+  <tr><td>主要風險</td><td>SPI 跨板訊號完整性；原 SoC 功能需重新分工</td><td>電源設計；RPi 5 供電限制</td></tr>
+</table></div>
+
+<div class="section">
+<h2 id="s5">5. 請貴司協助提供的資訊</h2>
+<ul>
+  <li>量產機型為 <b>RPi 4、RPi 5</b>，或兩者皆需支援？</li>
+  <li>RPi <b>GPIO 目前占用</b>狀況（方案一需要）</li>
+  <li><b>電源架構</b>：使用 RPi 原廠電源，或貴司自製電源板？是否有保護電路？</li>
+  <li>每層的<b>目標列印週期</b>（秒）：將決定是否必須導入壓縮與雙緩衝</li>
+</ul>
+</div>
+
+<div class="section">
+<h2 id="s6">6. 後續步驟</h2>
+<div class="tbl"><table>
+  <tr><th style="width:12%">方案</th><th>Phrozen</th><th style="width:38%">貴司</th></tr>
+  <tr><td>方案一</td><td>完成測試板改線 → 實測 SPI 速度與穩定性</td><td>評估 GPIO 占用與轉接板可行性</td></tr>
+  <tr><td>方案二</td><td>完成 SoC kernel 修改 → RPi ↔ SoC 實測；評估 FunctionFS；驗證 RPi 5；子系統板 USB 埠移除 VBUS 輸出</td><td>評估電源分離方式</td></tr>
+  <tr><td>共同</td><td colspan="2">確認目標列印週期，討論壓縮（RLE）與雙緩衝需求</td></tr>
+</table></div>
+</div>
+
+
+<div class="option internal">
+<h2 id="s7">7. 內部補充（不對外）</h2>
+
+<div class="section">
+<h3>7.1 技術風險與待確認事項</h3>
+<div class="tbl"><table>
+  <tr><th style="width:30%">項目</th><th>說明</th><th style="width:14%">狀態</th></tr>
+  <tr><td>SoC → FPGA SPI 實測速度</td><td>方案二的整體速度上限取決於這一段；USB 再快也會被卡住。客戶很可能問「端到端多快」，會前需備妥數字</td><td><span class="tag todo">待確認</span></td></tr>
+  <tr><td>RPi SPI 實際時脈上限</td><td>單線 SPI 12 MB/s 約需 100 MHz SCLK；RPi 4 實務穩定約 30～60 MHz（約 4～7 MB/s）。RPi 5 的 SPI 經 RP1 晶片，需分開驗證。另需注意跨板訊號完整性</td><td><span class="tag todo">待實測</span></td></tr>
+  <tr><td>FPGA 外部 DDR 容量</td><td>MIPI 需持續刷新畫面，frame 須存在 FPGA 端；雙緩衝需約 150 MB</td><td><span class="tag todo">待確認</span></td></tr>
+  <tr><td>SSD202D 記憶體餘裕（方案二）</td><td>SSD202D 內建 128 MB DDR，要放 75 MB frame 加 Linux 很緊；可能需分段轉送</td><td><span class="tag todo">待評估</span></td></tr>
+  <tr><td>USB gadget 類型</td><td>g_serial 經 tty 層，額外負擔大；改 FunctionFS（raw bulk）預期可提升。RPi 的 DWC2 控制器效能本身偏弱</td><td><span class="tag todo">待評估</span></td></tr>
+  <tr><td>移除 VBUS 的實作</td><td>以 0Ω 電阻切斷；切點須在 USB power switch <b>之後</b>，避免 OC（過電流）腳浮接或誤觸發，導致 kernel 關閉 port</td><td><span class="tag todo">待硬體確認</span></td></tr>
+  <tr><td>Y cable 規格</td><td>電源分支須帶 CC（否則 Type-C 電源不出電；RPi 5 需 CC 做 PD）；市售品資料端常帶 VBUS，已由我方移除 VBUS 處理</td><td><span class="tag wip">已有對策</span></td></tr>
+  <tr><td>SoC 與 FPGA 是否同板</td><td>影響示意圖畫法；目前示意圖以同一塊子系統板呈現</td><td><span class="tag todo">待確認</span></td></tr>
+</table></div>
+</div>
+
+<div class="section">
+<h3>7.2 壓縮與緩衝</h3>
+<ul>
+  <li>切片圖多為大面積黑底加邊緣灰階，RLE 預估可壓 20～100 倍（75 MB → 約 1～3 MB），任一方案頻寬皆足夠</li>
+  <li>解壓位置：方案一由 FPGA 硬體解 RLE（邏輯單純，但需改 FPGA）；方案二可由 SoC 軟體解（受 128 MB DDR 限制）</li>
+  <li>雙緩衝可在曝光／抬升期間傳下一層，把傳輸時間藏起來</li>
+</ul>
+</div>
+
+<div class="section">
+<h3>7.3 中長期改板方向（本次不主動向客戶提出）</h3>
+<div class="tbl"><table>
+  <tr><th style="width:18%">方向</th><th>內容</th><th style="width:30%">考量</th></tr>
+  <tr><td>換 SoC</td><td>選用支援 USB device 的 SoC。選型條件：<br>① USB 2.0 device 且 Linux gadget 驅動成熟<br>② 對 FPGA 有高速介面（並列 RGB／MIPI DSI 約 150 MB/s，或 QSPI＋DMA、SDIO），<b>不要再用 SPI</b><br>③ DDR ≥ 256 MB<br>④ 供貨與 SDK 支援</td><td>保留 Linux（UV、溫控、OTA）；需改板與軟體移植</td></tr>
+  <tr><td>USB 橋接晶片接 FPGA</td><td>FX2LP（slave FIFO）、FT232H（FT245 同步 FIFO），或 ULPI PHY（如 USB3320）＋ Gowin USB 2.0 Device IP；約 35～40 MB/s</td><td>符合客戶原本期待（RPi 當 host、插 USB-A）、無供電問題；SoC 功能需另行安排</td></tr>
+</table></div>
+</div>
+
+<div class="section">
+<h3>7.4 會議流程與注意事項</h3>
+<ol>
+  <li><b>開場</b>：說明本次為兩方案並行驗證，不需當場決定</li>
+  <li><b>背景</b>：先講 SoC USB 僅 host 的限制；表示理解客戶原本想接 RPi USB-A</li>
+  <li><b>傳輸時間表</b>：在此先問客戶「每層目標週期」</li>
+  <li><b>方案一／二</b>：依「示意圖 → 進度 → 需配合改動」順序說明</li>
+  <li><b>比較表</b>：快速帶過，不在此比優劣</li>
+  <li><b>請客戶提供資訊＋後續步驟</b>：當場取得答案，並確認負責人與時程</li>
+</ol>
+<ul>
+  <li>數字不說滿：6～12 MB/s 為估計；12 MB/s 為 RPi ↔ PC，非端到端</li>
+  <li>談電源前先問客戶現況，避免直接否定其既有設計（例如已用 GPIO 5V）</li>
+  <li>方案一涉及工作轉移（SoC 功能、轉接板），以「討論分工」方式提出</li>
+  <li>「gadget」可白話說明為「讓 RPi 反過來扮演 USB 裝置，像隨身碟一樣」</li>
+  <li>會後依結論更新文件（v0.2）寄給客戶</li>
+</ul>
+</div>
+
+<div class="section">
+<h3>7.5 預想問答</h3>
+<div class="tbl"><table class="qa">
+  <tr><th>客戶可能問</th><th>建議回答方向</th></tr>
+  <tr><td>端到端實際多快？</td><td>說明 RPi 端已驗證 12 MB/s（g_serial 為下限）；SoC → FPGA 段實測中／提供實測值，下次會議更新</td></tr>
+  <tr><td>為什麼不換一顆支援 USB device 的 SoC？</td><td>「這個方向我們也在評估，但牽涉改板與時程，所以先從不改板的方案開始驗證。」</td></tr>
+  <tr><td>75 MB 每層太慢怎麼辦？</td><td>建議導入 RLE 壓縮與雙緩衝；請客戶先提供目標週期以判斷必要性</td></tr>
+  <tr><td>方案一的 SoC 功能誰接？</td><td>開放討論：可由主系統承接，或評估移入 FPGA（需修改 FPGA）</td></tr>
+  <tr><td>能不能用 GPIO 5V 供電？</td><td>可行但會繞過 RPi 保護電路；若貴司電源板有保護則可接受</td></tr>
+</table></div>
+</div>
+</div>
+<footer>Phrozen · 內部版：含未對外資訊（第 7 節），請勿轉寄客戶。對外請使用客戶版。</footer>
+</div>
+</main>
+
+</div>
+<a class="fab" href="#top" aria-label="▲ 回到最上方">▲</a>
+</body>
+</html>

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RPi 主系統與 LCD 子系統板 資料串接方案</title>
+<style>
+:root {
+    --bg: #12151b; --panel: #191d25; --soft: #212632; --ink: #e2e6ee; --muted: #9aa3b4;
+    --line: #2d3442; --accent: #7fb0e0;
+    --ok: #7fd6a0; --ok-bg: #1d3a2a; --wip: #f0c36a; --wip-bg: #3d3018;
+    --todo: #b8c0ce; --todo-bg: #2a303c; --warn: #f08a7a; --warn-bg: #3a201d;
+    --int: #f08a7a;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    background: var(--bg); color: var(--ink); font-size: 16px; line-height: 1.7; margin: 0;
+  }
+  .wrap {
+    max-width: 1180px; margin: 0 auto; padding: 0 20px 64px;
+    display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px;
+  }
+  main { min-width: 0; padding-top: 40px; }
+
+  /* ---- 左側目錄 ---- */
+  nav.toc { position: sticky; top: 24px; align-self: start; padding-top: 40px; font-size: 14px; max-height: calc(100vh - 24px); overflow-y: auto; }
+  nav.toc .toc-title { color: var(--muted); font-size: 12px; letter-spacing: .08em; margin-bottom: 8px; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  nav.toc a { color: var(--muted); text-decoration: none; display: block; padding: 2px 0 2px 10px; border-left: 2px solid var(--line); }
+  nav.toc a:hover, nav.toc a:focus-visible { color: var(--accent); border-left-color: var(--accent); outline: none; }
+  nav.toc a.int { color: var(--int); }
+  nav.toc .toc-foot { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); display: grid; gap: 4px; }
+
+  /* 窄螢幕：目錄改放在內容上方（不隱藏），另有右下角浮動「▲」 */
+  a.fab { display: none; }
+  @media (max-width: 900px) {
+    .wrap { display: flex; flex-direction: column; padding: 0 16px 64px; }
+    .wrap > main { display: contents; }
+    main > header { order: 0; margin-top: 24px; margin-bottom: 0; }
+    nav.toc { order: 1; position: static; max-height: none; padding: 16px; margin-top: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+    main > .content { order: 2; }
+    h1 { font-size: 23px; }
+    a.fab {
+      display: block; position: fixed; right: 16px; bottom: 16px; z-index: 10;
+      width: 44px; height: 44px; line-height: 44px; text-align: center; border-radius: 50%;
+      background: var(--accent); color: #10141b; text-decoration: none; font-weight: 700;
+      box-shadow: 0 2px 8px rgba(0,0,0,.4);
+    }
+  }
+
+  header { border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 18px; }
+  header .kicker { color: var(--accent); font-size: 13px; letter-spacing: .08em; font-weight: 600; }
+  h1 { font-size: 28px; margin: 4px 0 6px; line-height: 1.35; }
+  header .meta { color: var(--muted); font-size: 13px; }
+  section { scroll-margin-top: 16px; }
+  h2 { font-size: 21px; color: var(--accent); margin: 36px 0 10px; padding-bottom: 4px; border-bottom: 1px solid var(--line); scroll-margin-top: 16px; }
+  h3 { font-size: 17px; margin: 22px 0 8px; scroll-margin-top: 16px; }
+  p { margin: 6px 0 10px; }
+  ul, ol { margin: 6px 0 10px; padding-left: 22px; }
+  li { margin: 3px 0; }
+  b { color: #fff; }
+  code { font-family: Consolas, "DejaVu Sans Mono", monospace; font-size: 14px; background: var(--soft); padding: 1px 5px; border-radius: 3px; }
+
+  .tbl { overflow-x: auto; margin: 8px 0 14px; }
+  table { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 15px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--soft); font-weight: 600; }
+  td ul { margin: 0; }
+  td.num { text-align: right; white-space: nowrap; }
+  .tag { display: inline-block; font-size: 13px; font-weight: 600; padding: 1px 9px; border-radius: 10px; white-space: nowrap; }
+  .ok { color: var(--ok); background: var(--ok-bg); }
+  .wip { color: var(--wip); background: var(--wip-bg); }
+  .todo { color: var(--todo); background: var(--todo-bg); }
+  .note { background: var(--panel); border-left: 3px solid var(--accent); padding: 10px 14px; margin: 10px 0 14px; font-size: 15px; }
+  .warn { background: var(--warn-bg); border-left: 3px solid var(--warn); padding: 10px 14px; margin: 10px 0 14px; font-size: 15px; }
+
+  .scroll-x { overflow-x: auto; }
+  .flow { display: flex; align-items: center; gap: 8px; margin: 10px 0 14px; flex-wrap: nowrap; min-width: 560px; }
+  .box { border: 1.5px solid var(--accent); border-radius: 6px; padding: 6px 12px; text-align: center; font-size: 15px; background: var(--panel); min-width: 90px; }
+  .box small { display: block; color: var(--muted); font-size: 12px; }
+  .box.cust { border-color: #7a8699; background: var(--soft); }
+  .arrow { color: var(--muted); font-size: 13px; text-align: center; white-space: nowrap; }
+  .arrow b { display: block; color: var(--ink); font-size: 13px; }
+  .arrow::after { content: "→"; display: block; font-size: 20px; line-height: 1; color: var(--accent); }
+
+  /* 接線示意圖：原圖為淺色配色，放在淺色底卡片上保持可讀 */
+  figure.wiring { margin: 12px 0 16px; background: #eef1f5; border-radius: 8px; padding: 10px; overflow-x: auto; }
+  figure.wiring svg { width: 100%; min-width: 640px; height: auto; display: block; }
+
+  .internal { border-top: 3px solid var(--int); margin-top: 40px; }
+  .internal h2 { color: var(--int); border-bottom-color: #5a2e28; }
+  .qa td:first-child { width: 38%; font-weight: 600; }
+  footer { margin-top: 32px; padding-top: 8px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  /* ---- 清掉文件版樣式對投影片的影響 ---- */
+  .deck { font-size: 16px; line-height: normal; }
+  .deck b { color: inherit; }
+  .deck h1, .deck h2, .deck h3 { color: inherit; border: 0; padding: 0; line-height: 1.3; }
+  .deck li { margin: 0; }
+  .deck table { min-width: 0; font-size: inherit; }
+  .deck th, .deck td { border: 0; padding: 0; }
+  .deck { --ink:#1d2433; --muted:#5b6577; --line:#d9dee7; --soft:#f4f6f9; --accent:#2f5d8a; --accent-soft:#e8eff7;
+        --ok:#2e7d4f; --ok-bg:#e6f3eb; --wip:#9a6a00; --wip-bg:#fbf1d9; --todo:#5b6577; --todo-bg:#eceff4; --warn:#a63d2f; --warn-bg:#fbe9e6; }
+  .deck { font-family: "Noto Sans TC","PingFang TC","Microsoft JhengHei","Segoe UI",sans-serif; color: var(--ink); }
+  .deck .slide { width: 960px; height: 540px; margin: 24px auto; background: #fff; position: relative; overflow: hidden;
+         padding: 34px 48px 30px; box-shadow: 0 2px 10px rgba(0,0,0,.08); break-after: page; display: flex; flex-direction: column; }
+  .deck .slide::before { content: ""; position: absolute; left: 0; top: 0; width: 8px; height: 100%; background: var(--accent); }
+  .deck .foot { position: absolute; left: 48px; right: 48px; bottom: 14px; display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+  .deck h1 { font-size: 34px; line-height: 1.3; margin: 0 0 14px; }
+  .deck h2 { font-size: 24px; margin: 0 0 4px; }
+  .deck .sub { color: var(--muted); font-size: 15px; margin: 0 0 14px; }
+  .deck .kicker { color: var(--accent); font-weight: 700; letter-spacing: .08em; font-size: 13px; margin-bottom: 10px; }
+  .deck .title-slide { justify-content: center; }
+  .deck .title-slide .meta { color: var(--muted); font-size: 14px; margin-top: 18px; }
+  .deck .agenda { display: flex; gap: 10px; margin-top: 26px; }
+  .deck .agenda div { background: var(--soft); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
+  .deck .agenda b { color: var(--accent); margin-right: 6px; }
+  .deck .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .deck .card { background: var(--soft); border-radius: 10px; padding: 12px 16px; }
+  .deck .card h3 { margin: 0 0 6px; font-size: 15px; color: var(--accent); }
+  .deck .card.cust h3 { color: var(--ink); }
+  .deck .card ul { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.6; }
+  .deck .flow { display: flex; align-items: center; gap: 8px; margin: 6px 0 18px; }
+  .deck .box { border: 2px solid var(--accent); border-radius: 8px; padding: 8px 14px; text-align: center; font-size: 15px; background: #fff; }
+  .deck .box small { display: block; color: var(--muted); font-size: 11px; }
+  .deck .box.cust { border-color: #7a8699; background: var(--soft); }
+  .deck .box.x { border-color: var(--warn); background: var(--warn-bg); }
+  .deck .arrow { text-align: center; font-size: 11px; color: var(--muted); }
+  .deck .arrow::after { content: "→"; display: block; font-size: 20px; line-height: 1; color: var(--accent); }
+  .deck .callout { background: var(--warn-bg); border-left: 4px solid var(--warn); border-radius: 6px; padding: 10px 14px; font-size: 15px; }
+  .deck .big { font-size: 40px; font-weight: 700; color: var(--accent); line-height: 1.1; }
+  .deck .kv { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .deck .kv td { padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  .deck .kv td:last-child { text-align: right; font-weight: 600; }
+  .deck .fig { flex: 0 0 auto; display: flex; justify-content: center; margin: 0 0 8px; }
+  .deck .fig svg { height: 250px; width: auto; }
+  .deck .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 0 7px; border-radius: 9px; margin-right: 4px; }
+  .deck .ok { color: var(--ok); background: var(--ok-bg); }
+  .deck .wip { color: var(--wip); background: var(--wip-bg); }
+  .deck .todo { color: var(--todo); background: var(--todo-bg); }
+  .deck table.cmp { width: 100%; border-collapse: collapse; font-size: 15px; margin-top: 6px; }
+  .deck table.cmp th, .deck table.cmp td { padding: 11px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  .deck table.cmp th { background: var(--soft); }
+  .deck table.cmp td:first-child { color: var(--muted); width: 20%; }
+  .deck ol.ask { font-size: 16px; line-height: 1.9; margin: 4px 0 0; padding-left: 22px; }
+  .deck .steps { font-size: 14px; line-height: 1.7; }
+  .deck .steps div { padding: 7px 0; border-bottom: 1px solid var(--line); }
+  .deck .steps b { display: inline-block; width: 96px; white-space: nowrap; color: var(--accent); }
+  /* ---- 簡報：投影片維持原本的淺色 16:9 版面，放在深色頁面上；窄螢幕可左右滑動 ---- */
+  .deck .slide-wrap { overflow-x: auto; margin: 0 0 28px; scroll-margin-top: 16px; }
+  .deck .slide { margin: 0 !important; border-radius: 6px; background: #eef1f5 !important; box-shadow: 0 2px 12px rgba(0,0,0,.45) !important; }
+  .deck .card, .deck .agenda div, .deck table.cmp th { background: #e2e7ee !important; }
+  .deck .box { background: #f7f9fb !important; }
+  .deck .box.cust { background: #e2e7ee !important; }
+  .deck-head { border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 18px; }
+
+  /* ---- 版本切換標籤 ---- */
+  .versions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 18px; }
+  .versions .grp { display: flex; gap: 4px; padding-right: 8px; border-right: 1px solid var(--line); }
+  .versions .grp:last-child { border-right: 0; }
+  .versions a {
+    font-size: 13px; padding: 3px 12px; border-radius: 999px; text-decoration: none; white-space: nowrap;
+    color: var(--muted); border: 1px solid var(--line); background: var(--panel);
+  }
+  .versions a:hover, .versions a:focus-visible { color: var(--accent); border-color: var(--accent); outline: none; }
+  .versions a.on { color: #10141b; background: var(--accent); border-color: var(--accent); font-weight: 700; }
+  .versions a.int.on { background: var(--int); border-color: var(--int); }
+  @media (max-width: 900px) { .versions { order: 0; margin-top: 16px; margin-bottom: 0; } }
+
+  .wrap { max-width: 1300px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc" aria-label="目錄">
+  <div class="toc-title">目錄</div>
+  <ol>
+    <li><a href="#p1">1. 封面</a></li>
+    <li><a href="#p2">2. 背景：為什麼不能直接用 USB？</a></li>
+    <li><a href="#p3">3. 方案一：RPi 以 SPI 直連 FPGA</a></li>
+    <li><a href="#p4">4. 方案二：RPi USB Gadget 接 SoC</a></li>
+    <li><a href="#p5">5. 兩方案比較</a></li>
+    <li><a href="#p6">6. 請貴司協助提供</a></li>
+  </ol>
+  <div class="toc-foot">
+    <a href="#top">▲ 回到最上方</a>
+    <a href="ssys_atlas.html">← 回上一頁</a>
+  </div>
+</nav>
+
+<main>
+<nav class="versions" aria-label="版本">
+  <div class="grp">
+    <a class="int" href="rpi_interface_internal_cht.html">內部中文版</a>
+    <a class="int" href="rpi_interface_internal_en.html">內部英文版</a>
+  </div>
+  <div class="grp">
+    <a href="rpi_interface_customer_cht.html">客戶中文版</a>
+    <a href="rpi_interface_customer_en.html">客戶英文版</a>
+  </div>
+  <div class="grp">
+    <a class="on" aria-current="page" href="rpi_interface_proposal_cht.html">簡報中文版</a>
+    <a href="rpi_interface_proposal_en.html">簡報英文版</a>
+  </div>
+</nav>
+
+<header id="top" class="deck-head">
+  <div class="kicker">PHROZEN · LCD 子系統板</div>
+  <h1>RPi 主系統與 LCD 子系統板 資料串接方案</h1>
+  <div class="meta">客戶簡報（6 頁）</div>
+</header>
+
+<div class="content">
+<div class="deck">
+<div class="slide-wrap" id="p1"><section class="slide title-slide"><div class="kicker">PHROZEN · LCD 子系統板</div><h1>RPi 主系統與 LCD 子系統板<br>資料串接方案</h1>
+      <div class="meta">草案 v0.1　｜　2026-11-12</div>
+      <div class="agenda"><div><b>1</b>背景</div><div><b>2</b>方案一：SPI</div><div><b>3</b>方案二：USB Gadget</div><div><b>4</b>比較與下一步</div></div><div class="foot"><span>Phrozen · 討論用草案</span><span>1 / 6</span></div></section></div>
+<div class="slide-wrap" id="p2"><section class="slide"><h2>背景：為什麼不能直接用 USB？</h2><p class="sub">SoC 的 USB 只能當 Host，無法當 RPi 的 USB 裝置（已與原廠確認）</p>
+      <div class="flow"><div class="box cust">RPi<small>主系統</small></div><div class="arrow">圖</div><div class="box">SSD202D<small>SoC</small></div><div class="arrow">SPI</div><div class="box">GW5A<small>FPGA</small></div><div class="arrow">MIPI</div><div class="box">LCD<small>14K</small></div></div>
+      <div class="cols">
+        <div class="card"><h3>每層資料量</h3><div class="big">75 MB</div><div class="sub" style="margin:4px 0 0">13344 × 7500 × 6 bit</div></div>
+        <div class="card"><h3>傳輸時間</h3><table class="kv"><tr><td>6 MB/s</td><td>≈ 12.5 秒</td></tr><tr><td>12 MB/s</td><td>≈ 6.3 秒</td></tr></table>
+          <div style="font-size:13px;margin-top:8px;color:var(--accent)">→ 想請教：每層目標週期？可再搭配壓縮縮短</div></div>
+      </div>
+      <div class="callout" style="margin-top:16px">因此提出兩個<b>不需改板</b>即可驗證的方案</div><div class="foot"><span>Phrozen · 討論用草案</span><span>2 / 6</span></div></section></div>
+<div class="slide-wrap" id="p3"><section class="slide"><h2>方案一：RPi 以 SPI 直連 FPGA</h2><p class="sub" style="margin-bottom:6px">移除 SoC，沿用既有 FPGA 的 LCD 控制指令</p>
+          <div class="fig"><svg class="d" viewBox="0 0 900 330" xmlns="http://www.w3.org/2000/svg" role="img"><style>
+.d text{font-family:inherit;fill:#1d2433;}
+.d .t{font-size:13px;font-weight:600;}
+.d .s{font-size:10.5px;fill:#5b6577;}
+.d .w{font-size:10.5px;}
+.d .lb{font-size:11px;font-weight:600;}
+</style><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2f5d8a"/></marker></defs><text x="18" y="118" class="lb" text-anchor="start">電源輸入</text><polyline points="20,128 82,128" fill="none" stroke="#2f5d8a" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arr)"/><rect x="90" y="40" width="260" height="250" rx="8" fill="#f4f6f9" stroke="#7a8699" stroke-width="2"/><text x="104" y="64" class="t" text-anchor="start">RPi 4 / 5</text><text x="104" y="80" class="s" text-anchor="start">主系統（貴司）</text><rect x="84" y="108" width="64" height="40" rx="5" fill="#fff" stroke="#1d2433" stroke-width="1.6"/><text x="116" y="132" class="w" text-anchor="middle">USB-C</text><rect x="296" y="62" width="25" height="205" rx="2" fill="#2b3240" stroke="#2b3240" stroke-width="1"/><rect x="300" y="66" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="66" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="76" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="76" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="86" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="86" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="96" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="96" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="106" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="106" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="116" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="116" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="126" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="126" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="136" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="136" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="146" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="146" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="156" width="7" height="7" rx="1" fill="#2f5d8a"/><rect x="310" y="156" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="166" width="7" height="7" rx="1" fill="#2f5d8a"/><rect x="310" y="166" width="7" height="7" rx="1" fill="#b07a00"/><rect x="300" y="176" width="7" height="7" rx="1" fill="#2f5d8a"/><rect x="310" y="176" width="7" height="7" rx="1" fill="#2f5d8a"/><rect x="300" y="186" width="7" height="7" rx="1" fill="#1d2433"/><rect x="310" y="186" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="196" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="196" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="206" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="206" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="216" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="216" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="226" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="226" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="236" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="236" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="246" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="246" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="300" y="256" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="310" y="256" width="7" height="7" rx="1" fill="#8a93a3"/><text x="308" y="54" class="s" text-anchor="middle">40-pin GPIO</text><rect x="104" y="192" width="8" height="8" rx="1" fill="#2f5d8a"/><text x="118" y="200" class="s" text-anchor="start">SPI：pin 19 / 21 / 23 / 24</text><rect x="104" y="208" width="8" height="8" rx="1" fill="#1d2433"/><text x="118" y="216" class="s" text-anchor="start">GND：pin 25</text><rect x="104" y="224" width="8" height="8" rx="1" fill="#b07a00"/><text x="118" y="232" class="s" text-anchor="start">BUSY（例）：pin 22</text><polyline points="307.5,159.5 334,159.5 360,136 430,136" fill="none" stroke="#2f5d8a" stroke-width="1.4" stroke-linejoin="round"/><text x="398" y="133" class="s" text-anchor="middle">MOSI</text><polyline points="307.5,169.5 334,169.5 360,152 430,152" fill="none" stroke="#2f5d8a" stroke-width="1.4" stroke-linejoin="round"/><text x="398" y="149" class="s" text-anchor="middle">MISO</text><polyline points="307.5,179.5 334,179.5 360,168 430,168" fill="none" stroke="#2f5d8a" stroke-width="1.4" stroke-linejoin="round"/><text x="398" y="165" class="s" text-anchor="middle">SCLK</text><polyline points="317.5,179.5 334,179.5 360,184 430,184" fill="none" stroke="#2f5d8a" stroke-width="1.4" stroke-linejoin="round"/><text x="398" y="181" class="s" text-anchor="middle">CE0</text><polyline points="317.5,169.5 334,169.5 360,200 430,200" fill="none" stroke="#b07a00" stroke-width="1.4" stroke-linejoin="round" stroke-dasharray="4 3"/><text x="398" y="197" class="s" text-anchor="middle">BUSY</text><polyline points="307.5,189.5 334,189.5 360,216 430,216" fill="none" stroke="#1d2433" stroke-width="1.4" stroke-linejoin="round"/><text x="398" y="213" class="s" text-anchor="middle">GND</text><rect x="430" y="118" width="92" height="116" rx="8" fill="#f4f6f9" stroke="#7a8699" stroke-width="2"/><text x="476" y="172" class="t" text-anchor="middle">轉接板</text><text x="476" y="252" class="s" text-anchor="middle">量產需設計</text><text x="476" y="266" class="s" text-anchor="middle">控制線長／接頭</text><polyline points="522,136 590,136" fill="none" stroke="#5b6577" stroke-width="1.4" stroke-linejoin="round"/><polyline points="522,152 590,152" fill="none" stroke="#5b6577" stroke-width="1.4" stroke-linejoin="round"/><polyline points="522,168 590,168" fill="none" stroke="#5b6577" stroke-width="1.4" stroke-linejoin="round"/><polyline points="522,184 590,184" fill="none" stroke="#5b6577" stroke-width="1.4" stroke-linejoin="round"/><polyline points="522,200 590,200" fill="none" stroke="#5b6577" stroke-width="1.4" stroke-linejoin="round"/><polyline points="522,216 590,216" fill="none" stroke="#5b6577" stroke-width="1.4" stroke-linejoin="round"/><text x="556.0" y="126" class="s" text-anchor="middle">SPI 排線</text><rect x="590" y="40" width="190" height="250" rx="8" fill="#e8eff7" stroke="#2f5d8a" stroke-width="2"/><text x="604" y="64" class="t" text-anchor="start">LCD 子系統板（Phrozen）</text><rect x="584" y="124" width="26" height="104" rx="3" fill="#fff" stroke="#2f5d8a" stroke-width="1.6"/><text x="597" y="244" class="s" text-anchor="middle">接頭</text><rect x="640" y="86" width="116" height="42" rx="6" fill="#fff" stroke="#b6bdc9" stroke-width="1.6" stroke-dasharray="5 4"/><text x="698" y="104" class="w" text-anchor="middle" style="fill:#b6bdc9">SSD202D</text><text x="698" y="119" class="s" text-anchor="middle" style="fill:#b6bdc9">移除</text><polyline points="646,96 750,120" fill="none" stroke="#b6bdc9" stroke-width="1.2" stroke-linejoin="round"/><rect x="640" y="148" width="116" height="60" rx="6" fill="#fff" stroke="#2f5d8a" stroke-width="1.6"/><text x="698" y="183" class="lb" text-anchor="middle">GW5A FPGA</text><polyline points="610,178 638,178" fill="none" stroke="#2f5d8a" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arr)"/><polyline points="756,178 818,178" fill="none" stroke="#2f5d8a" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arr)"/><text x="784" y="170" class="s" text-anchor="start">MIPI</text><rect x="820" y="140" width="66" height="76" rx="6" fill="#fff" stroke="#1d2433" stroke-width="1.6"/><text x="853" y="175" class="lb" text-anchor="middle">14K LCD</text><text x="853" y="192" class="s" text-anchor="middle">LCD Driver</text><rect x="90" y="309" width="14" height="10" rx="2" fill="#f4f6f9" stroke="#7a8699" stroke-width="1.2"/><text x="109" y="318" class="s" text-anchor="start">貴司</text><rect x="170" y="309" width="14" height="10" rx="2" fill="#e8eff7" stroke="#2f5d8a" stroke-width="1.2"/><text x="189" y="318" class="s" text-anchor="start">Phrozen</text></svg></div>
+          <div class="cols"><div class="card"><h3>目前進度（Phrozen）</h3><ul><li><span class="tag ok">可沿用</span>既有 FPGA LCD 指令</li><li><span class="tag wip">進行中</span>測試板改線</li><li><span class="tag todo">待實測</span>速度（估計 6～12 MB/s）</li></ul></div>
+          <div class="card cust"><h3>貴司需配合</h3><ul><li>SPI 轉接板（量產用）</li><li>GPIO 規劃：SPI0 + 1 支 BUSY</li><li>spidev 驅動＋傳輸協定</li><li>原 SoC 功能的分工（待討論）</li></ul></div></div><div class="foot"><span>Phrozen · 討論用草案</span><span>3 / 6</span></div></section></div>
+<div class="slide-wrap" id="p4"><section class="slide"><h2>方案二：RPi USB Gadget 接 SoC</h2><p class="sub" style="margin-bottom:6px">RPi 的 Type-C 切成 USB 裝置，接子系統板 USB-A；維持現有架構</p>
+          <div class="fig"><svg class="d" viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg" role="img"><style>
+.d text{font-family:inherit;fill:#1d2433;}
+.d .t{font-size:13px;font-weight:600;}
+.d .s{font-size:10.5px;fill:#5b6577;}
+.d .w{font-size:10.5px;}
+.d .lb{font-size:11px;font-weight:600;}
+</style><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2f5d8a"/></marker></defs><rect x="20" y="22" width="150" height="50" rx="8" fill="#f4f6f9" stroke="#7a8699" stroke-width="2"/><text x="95" y="44" class="lb" text-anchor="middle">Type-C 電源</text><text x="95" y="60" class="s" text-anchor="middle">RPi 5 建議 PD 5V/5A</text><polyline points="95,72 95,148" fill="none" stroke="#c0392b" stroke-width="2.4" stroke-linejoin="round"/><text x="103" y="90" class="s" text-anchor="start">電源分支：VBUS / GND / CC</text><rect x="55" y="148" width="80" height="44" rx="10" fill="#fff" stroke="#7a8699" stroke-width="2"/><text x="95" y="175" class="lb" text-anchor="middle">Y cable</text><polyline points="135,170 186,170" fill="none" stroke="#1d2433" stroke-width="3" stroke-linejoin="round"/><rect x="190" y="100" width="260" height="230" rx="8" fill="#f4f6f9" stroke="#7a8699" stroke-width="2"/><text x="290" y="290" class="t" text-anchor="start">RPi 4 / 5</text><text x="290" y="306" class="s" text-anchor="start">主系統（貴司）</text><rect x="184" y="148" width="96" height="44" rx="5" fill="#fff" stroke="#1d2433" stroke-width="1.6"/><text x="232" y="174" class="w" text-anchor="middle">USB-C（Gadget）</text><rect x="406" y="116" width="25" height="205" rx="2" fill="#2b3240" stroke="#2b3240" stroke-width="1"/><rect x="410" y="120" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="120" width="7" height="7" rx="1" fill="#c0392b"/><rect x="410" y="130" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="130" width="7" height="7" rx="1" fill="#c0392b"/><rect x="410" y="140" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="140" width="7" height="7" rx="1" fill="#1d2433"/><rect x="410" y="150" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="150" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="160" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="160" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="170" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="170" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="180" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="180" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="190" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="190" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="200" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="200" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="210" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="210" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="220" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="220" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="230" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="230" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="240" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="240" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="250" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="250" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="260" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="260" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="270" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="270" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="280" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="280" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="290" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="290" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="300" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="300" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="410" y="310" width="7" height="7" rx="1" fill="#8a93a3"/><rect x="420" y="310" width="7" height="7" rx="1" fill="#8a93a3"/><text x="418" y="338" class="s" text-anchor="middle">40-pin GPIO</text><rect x="204" y="222" width="8" height="8" rx="1" fill="#c0392b"/><text x="218" y="230" class="s" text-anchor="start">5V：pin 2 / 4</text><rect x="204" y="238" width="8" height="8" rx="1" fill="#1d2433"/><text x="218" y="246" class="s" text-anchor="start">GND：pin 6</text><rect x="300" y="22" width="190" height="50" rx="8" fill="#fff" stroke="#b07a00" stroke-width="1.6" stroke-dasharray="5 4"/><text x="395" y="44" class="lb" text-anchor="middle">替代：5V 電源板</text><text x="395" y="60" class="s" text-anchor="middle" style="fill:#b07a00">不建議，除非自帶保護電路</text><polyline points="420,72 420,95 443.5,95 443.5,123.5 427.5,123.5" fill="none" stroke="#b07a00" stroke-width="1.6" stroke-linejoin="round" stroke-dasharray="4 3"/><polyline points="460,72 460,88 453.5,88 453.5,143.5 427.5,143.5" fill="none" stroke="#b07a00" stroke-width="1.6" stroke-linejoin="round" stroke-dasharray="4 3"/><polyline points="95,192 95,350 520,350 520,250 552,250" fill="none" stroke="#2f5d8a" stroke-width="2.4" stroke-linejoin="round"/><text x="105" y="342" class="s" text-anchor="start">資料分支：D+ / D− / GND</text><rect x="560" y="100" width="230" height="230" rx="8" fill="#e8eff7" stroke="#2f5d8a" stroke-width="2"/><text x="574" y="124" class="t" text-anchor="start">LCD 子系統板（Phrozen）</text><rect x="552" y="228" width="56" height="44" rx="5" fill="#fff" stroke="#2f5d8a" stroke-width="1.6"/><text x="580" y="264" class="w" text-anchor="middle">USB-A</text><text x="580" y="290" class="s" text-anchor="middle" style="fill:#c0392b">VBUS 已移除</text><g stroke="#c0392b" stroke-width="2"><line x1="574" y1="234" x2="586" y2="246"/><line x1="586" y1="234" x2="574" y2="246"/></g><rect x="630" y="150" width="140" height="50" rx="6" fill="#fff" stroke="#2f5d8a" stroke-width="1.6"/><text x="700" y="172" class="lb" text-anchor="middle">SSD202D</text><text x="700" y="188" class="s" text-anchor="middle">USB Host</text><polyline points="608,250 620,250 620,175 628,175" fill="none" stroke="#2f5d8a" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arr)"/><rect x="630" y="250" width="140" height="50" rx="6" fill="#fff" stroke="#2f5d8a" stroke-width="1.6"/><text x="700" y="280" class="lb" text-anchor="middle">GW5A FPGA</text><polyline points="700,200 700,248" fill="none" stroke="#2f5d8a" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arr)"/><text x="706" y="228" class="s" text-anchor="start">SPI</text><polyline points="770,275 818,275" fill="none" stroke="#2f5d8a" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arr)"/><text x="794" y="267" class="s" text-anchor="start">MIPI</text><rect x="820" y="237" width="66" height="76" rx="6" fill="#fff" stroke="#1d2433" stroke-width="1.6"/><text x="853" y="272" class="lb" text-anchor="middle">14K LCD</text><text x="853" y="289" class="s" text-anchor="middle">LCD Driver</text><rect x="600" y="363" width="14" height="10" rx="2" fill="#f4f6f9" stroke="#7a8699" stroke-width="1.2"/><text x="619" y="372" class="s" text-anchor="start">貴司</text><rect x="680" y="363" width="14" height="10" rx="2" fill="#e8eff7" stroke="#2f5d8a" stroke-width="1.2"/><text x="699" y="372" class="s" text-anchor="start">Phrozen</text><polyline points="765,368 785,368" fill="none" stroke="#b07a00" stroke-width="1.6" stroke-linejoin="round" stroke-dasharray="4 3"/><text x="790" y="372" class="s" text-anchor="start">替代方案</text></svg></div>
+          <div class="cols"><div class="card"><h3>目前進度（Phrozen）</h3><ul><li><span class="tag ok">已驗證</span>RPi 4 Gadget 模式</li><li><span class="tag ok">實測</span>RPi 4 ↔ PC 約 12 MB/s（可再提升）</li><li><span class="tag wip">進行中</span>與 SoC 對接；RPi 5 待驗證</li><li><span class="tag ok">我方</span>子系統板 USB 埠移除 VBUS，避免回灌</li></ul></div>
+          <div class="card cust"><h3>貴司需配合</h3><ul><li>config.txt 開啟 Gadget 模式</li><li>Y cable 分離電源／資料（電源端含 CC）</li><li>RPi 5：電源需 PD 5V/5A</li></ul></div></div><div class="foot"><span>Phrozen · 討論用草案</span><span>4 / 6</span></div></section></div>
+<div class="slide-wrap" id="p5"><section class="slide"><h2>兩方案比較</h2>
+      <table class="cmp"><tr><th></th><th>方案一：SPI</th><th>方案二：USB Gadget</th></tr>
+      <tr><td>速度</td><td>估計 6～12 MB/s</td><td>實測 12 MB/s（RPi ↔ PC）</td></tr><tr><td>驗證進度</td><td>測試板準備中</td><td>RPi 端已驗證，對接中</td></tr><tr><td>子系統架構</td><td>移除 SoC，較精簡</td><td>維持現有架構</td></tr><tr><td>貴司硬體</td><td>SPI 轉接板</td><td>Y cable 電源分離</td></tr><tr><td>貴司軟體</td><td>spidev＋傳輸協定</td><td>Gadget 設定</td></tr></table><div class="foot"><span>Phrozen · 討論用草案</span><span>5 / 6</span></div></section></div>
+<div class="slide-wrap" id="p6"><section class="slide"><div class="cols" style="gap:30px">
+      <div><h2>請貴司協助提供</h2><ol class="ask"><li>量產機型：RPi 4、RPi 5，或兩者？</li><li>GPIO 目前占用狀況</li><li>電源架構（原廠電源或自製電源板？）</li><li>每層目標列印週期（秒）</li></ol></div>
+      <div><h2>下一步</h2><div class="steps"><div><b>方案一</b>我方完成測試板 → 實測速度；貴司評估 GPIO／轉接板</div><div><b>方案二</b>我方完成 SoC 對接、RPi 5 驗證；貴司評估電源分離</div><div><b>共同</b>依目標週期討論是否導入壓縮</div></div></div>
+      </div><div class="foot"><span>Phrozen · 討論用草案</span><span>6 / 6</span></div></section></div>
+</div>
+</div>
+</main>
+
+</div>
+<a class="fab" href="#top" aria-label="▲ 回到最上方">▲</a>
+</body>
+</html>
