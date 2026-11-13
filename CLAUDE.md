@@ -15,7 +15,7 @@ index.html                  首頁：專案目錄（只放專案卡片，不放�
 | 顯示名稱 | 資料夾 | 專案頁 |
 | --- | --- | --- |
 | Vigil Cambox | `Vigil_Cambox/` | `vigil_cambox.html` |
-| FPGA Board | `FPGA_Board/` | `fpga_board.html` |
+| SSYS Atlas | `SSYS_Atlas/` | `ssys_atlas.html` |
 | Trim+ | `Trim_plus/` | `trim_plus.html` |
 | Forge | `Forge/` | `forge.html` |
 
@@ -49,7 +49,7 @@ index.html                  首頁：專案目錄（只放專案卡片，不放�
 - **「▲ 回到最上方」**：`href="#top"`，並在標題區（header 或 h1）加上 `id="top"`。
 - **「← 回上一頁」**：`href="<project>.html"`（連到同資料夾的專案頁，不用 `history.back()`，這樣直接開網址也能回去）。
 
-位置依文件版面而定，目前 `FPGA_Board/` 三份的做法可當參考：
+位置依文件版面而定，目前 `SSYS_Atlas/` 三份的做法可當參考：
 
 | 版面 | 放法 | 範例 |
 | --- | --- | --- |
@@ -77,7 +77,7 @@ index.html                  首頁：專案目錄（只放專案卡片，不放�
 - 沒有合適分類時，新增一組 `<h2>分類名</h2>` + `<ul>`，並向使用者確認分類名稱。
 - 新文件加在該分類最後；順序使用者會自己調，不用另訂規則。
 - `.desc` 是根據章節標題摘要的，回報時告知使用者可自行修改。
-- 專案頁原本是「尚無文件」時：把 `<p class="empty">` 換成分類 `<h2>` + `<ul>`（寫法同 `FPGA_Board/fpga_board.html`）。
+- 專案頁原本是「尚無文件」時：把 `<p class="empty">` 換成分類 `<h2>` + `<ul>`（寫法同 `SSYS_Atlas/ssys_atlas.html`）。
 - 同時更新首頁 `index.html` 該專案卡片的 `.desc`（分類＋文件數，例如「FPGA / 光引擎板、LCD 面板 · 3 份文件」）。
 - `class="comment"` 的元素在頁面上是隱藏的（給維護者看的註解），不要刪掉也不要改成顯示。
 
