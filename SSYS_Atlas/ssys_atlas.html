@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FPGA Board</title>
+<title>SSYS Atlas</title>
 <style>
   :root {
     --bg: #0f1115;
@@ -76,7 +76,7 @@
 <body>
 <main>
   <a class="back" href="../index.html">← 回首頁</a>
-  <h1>FPGA Board</h1>
+  <h1>SSYS Atlas</h1>
   <p class="lead comment">團隊 review 用的整理文件。</p>
 
   <h2>FPGA / 光引擎板</h2>
@@ -93,6 +93,12 @@
         <span class="desc">RacerTech XCYP USB2MIPI 交接報告：系統架構、使用說明重點、QSPI 燒錄流程。</span>
       </a>
     </li>
+    <li>
+      <a class="doc" href="fpga_asic_production_cost.html">
+        <span class="title">FPGA 降成本與 ASIC 評估 — 討論整理</span>
+        <span class="desc">FPGA 報價過高後的評估：FPGA／ASIC 觀念、換晶片可沿用與需重做項目、供電板定位、西柏五個問題與延伸問答。</span>
+      </a>
+    </li>
   </ul>
 
   <h2>LCD 面板</h2>
@@ -101,6 +107,16 @@
       <a class="doc" href="innolux_lcd_3bits_to_6bits.html">
         <span class="title">ZE170DA-01A (H032) 3bit → 6bit Mode 切換重點整理</span>
         <span class="desc">Innolux 面板：硬體架構推測、Power On 時序、6bit Mode 設定與開機流程範例。</span>
+      </a>
+    </li>
+  </ul>
+
+  <h2>系統串接</h2>
+  <ul>
+    <li>
+      <a class="doc" href="rpi_interface_internal_cht.html">
+        <span class="title">RPi 主系統與 LCD 子系統板 資料串接方案</span>
+        <span class="desc">內部／客戶／簡報 × 中英文共 6 個版本（頁面頂端切換）。SSD202D 僅支援 USB Host 下的兩個串接方案：SPI 直連 FPGA、USB Gadget 接 SoC；進度、客戶需配合改動、方案比較，以及內部風險與會議問答。</span>
       </a>
     </li>
   </ul>
